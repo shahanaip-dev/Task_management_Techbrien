@@ -6,9 +6,10 @@ interface InputProps extends React.InputHTMLAttributes<HTMLInputElement> {
   error?:    string;
   hint?:     string;
   leftIcon?: React.ReactNode;
+  rightIcon?: React.ReactNode;
 }
 
-export default function Input({ label, error, hint, leftIcon, id, className, ...props }: InputProps) {
+export default function Input({ label, error, hint, leftIcon, rightIcon, id, className, ...props }: InputProps) {
   const inputId = id ?? label?.toLowerCase().replace(/\s+/g, '-');
   return (
     <div className="flex flex-col gap-1.5">
@@ -24,6 +25,11 @@ export default function Input({ label, error, hint, leftIcon, id, className, ...
             {leftIcon}
           </span>
         )}
+        {rightIcon && (
+          <span className="absolute right-3 top-1/2 -translate-y-1/2 text-[#8A8278]">
+            {rightIcon}
+          </span>
+        )}
         <input
           id={inputId}
           className={clsx(
@@ -33,6 +39,7 @@ export default function Input({ label, error, hint, leftIcon, id, className, ...
             'transition-colors duration-200',
             error ? 'border-red-400 bg-red-50' : 'border-[#E8DDD4] hover:border-[#C4B8AD]',
             leftIcon ? 'pl-9' : '',
+            rightIcon ? 'pr-9' : '',
             className
           )}
           {...props}

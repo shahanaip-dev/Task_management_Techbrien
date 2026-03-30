@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import toast from 'react-hot-toast';
 import AppLayout from '@/components/layout/AppLayout';
 import ProjectCard from '@/components/projects/ProjectCard';
@@ -9,24 +9,37 @@ import Input, { Textarea } from '@/components/ui/Input';
 import Button from '@/components/ui/Button';
 import { useAuth } from '@/context/AuthContext';
 import { useProjects } from '@/hooks/useProjects';
-import type { CreateProjectForm } from '@/types';
+import { usersApi } from '@/lib/api';
+import type { CreateProjectForm, User } from '@/types';
 
 export default function DashboardPage() {
   const { isAdmin } = useAuth();
   const { projects, meta, loading, error, createProject, deleteProject, offset, setOffset } = useProjects(12);
 
   const [showModal, setShowModal] = useState(false);
-  const [form,      setForm]      = useState<CreateProjectForm>({ name: '', description: '' });
+  const [form,      setForm]      = useState<CreateProjectForm>({ name: '', description: '', memberIds: [] });
   const [saving,    setSaving]    = useState(false);
+  const [users,     setUsers]     = useState<User[]>([]);
+
+  useEffect(() => {
+    if (!isAdmin) return;
+    usersApi.list({ limit: 200 })
+      .then((r) => setUsers(r.data.data.data))
+      .catch(() => {});
+  }, [isAdmin]);
 
   const handleCreate = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!form.name.trim()) return toast.error('Project name is required');
     setSaving(true);
     try {
-      await createProject(form);
+      await createProject({
+        ...form,
+        name: form.name.trim(),
+        memberIds: form.memberIds?.length ? form.memberIds : undefined,
+      });
       toast.success('Project created');
-      setForm({ name: '', description: '' });
+      setForm({ name: '', description: '', memberIds: [] });
       setShowModal(false);
     } catch (err: any) {
       toast.error(err?.response?.data?.message ?? 'Failed to create project');
@@ -125,6 +138,34 @@ export default function DashboardPage() {
               value={form.name} onChange={(e) => setForm({ ...form, name: e.target.value })} />
             <Textarea label="Description" placeholder="What is this project about?"
               value={form.description ?? ''} onChange={(e) => setForm({ ...form, description: e.target.value })} />
+            <div className="flex flex-col gap-2">
+              <label className="text-xs font-medium text-[#1C1A18] tracking-wide uppercase">
+                Assign Users
+              </label>
+              <div className="max-h-40 overflow-auto rounded border border-[#E8DDD4] bg-white p-3">
+                {users.length === 0 ? (
+                  <p className="text-xs text-[#8A8278]">No users available</p>
+                ) : (
+                  users.map((u) => (
+                    <label key={u.id} className="flex items-center gap-2 py-1 text-sm text-[#1C1A18]">
+                      <input
+                        type="checkbox"
+                        className="accent-[#7D1F1F]"
+                        checked={!!form.memberIds?.includes(u.id)}
+                        onChange={(e) => {
+                          const next = new Set(form.memberIds ?? []);
+                          if (e.target.checked) next.add(u.id); else next.delete(u.id);
+                          setForm({ ...form, memberIds: Array.from(next) });
+                        }}
+                      />
+                      <span>{u.name}</span>
+                      <span className="text-xs text-[#8A8278]">({u.email})</span>
+                    </label>
+                  ))
+                )}
+              </div>
+              <p className="text-xs text-[#8A8278]">Only assigned users can create tasks in this project.</p>
+            </div>
             <div className="flex justify-end gap-2 pt-3 border-t border-[#C6A0A0]">
               <Button variant="secondary" type="button" onClick={() => setShowModal(false)}>Cancel</Button>
               <Button type="submit" loading={saving}>Create Project</Button>

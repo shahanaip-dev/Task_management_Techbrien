@@ -12,6 +12,7 @@ export class ProjectService {
       name:        input.name,
       description: input.description,
       createdBy,
+      memberIds:   input.memberIds,
     });
   }
 

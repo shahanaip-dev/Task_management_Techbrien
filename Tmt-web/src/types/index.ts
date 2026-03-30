@@ -59,18 +59,16 @@ export interface LoginPayload { email: string; password: string; }
 export interface AuthResponse  { token: string; user: User; }
 
 // ── Forms ──────────────────────────────────────────────────────────────────
-export interface CreateProjectForm { name: string; description?: string; }
+export interface CreateProjectForm { name: string; description?: string; memberIds?: string[]; }
 export interface CreateUserForm {
   name:     string;
   email:    string;
   password: string;
-  role:     Role;
 }
 export interface UpdateUserForm {
   name?:     string;
   email?:    string;
   password?: string;
-  role?:     Role;
 }
 export interface CreateTaskForm {
   title:       string;

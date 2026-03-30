@@ -9,7 +9,7 @@ export class TaskController {
   /** POST /api/v1/tasks */
   create = async (req: AuthenticatedRequest, res: Response, next: NextFunction): Promise<void> => {
     try {
-      const task = await this.taskService.createTask(req.body);
+      const task = await this.taskService.createTask(req.body, req.user);
       sendCreated(res, task, 'Task created');
     } catch (err) {
       next(err);
@@ -19,7 +19,7 @@ export class TaskController {
   /** GET /api/v1/tasks */
   list = async (req: AuthenticatedRequest, res: Response, next: NextFunction): Promise<void> => {
     try {
-      const result = await this.taskService.listTasks(req.query as Record<string, unknown>);
+      const result = await this.taskService.listTasks(req.query as Record<string, unknown>, req.user);
       sendSuccess(res, result);
     } catch (err) {
       next(err);
@@ -29,7 +29,7 @@ export class TaskController {
   /** GET /api/v1/tasks/:id */
   getOne = async (req: AuthenticatedRequest, res: Response, next: NextFunction): Promise<void> => {
     try {
-      const task = await this.taskService.getTask(req.params.id);
+      const task = await this.taskService.getTask(req.params.id, req.user);
       sendSuccess(res, task);
     } catch (err) {
       next(err);

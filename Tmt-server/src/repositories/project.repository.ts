@@ -44,14 +44,37 @@ export class ProjectRepository {
     name:        string;
     description?: string;
     createdBy:   string;
+    memberIds?:  string[];
   }): Promise<Project> {
-    const { rows } = await this.db.query<Project>(
-      `INSERT INTO projects (name, description, created_by)
-       VALUES ($1, $2, $3)
-       RETURNING id, name, description, created_by, created_at`,
-      [data.name, data.description ?? null, data.createdBy]
-    );
-    return rows[0];
+    const client = await this.db.connect();
+    try {
+      await client.query('BEGIN');
+      const { rows } = await client.query<Project>(
+        `INSERT INTO projects (name, description, created_by)
+         VALUES ($1, $2, $3)
+         RETURNING id, name, description, created_by, created_at`,
+        [data.name, data.description ?? null, data.createdBy]
+      );
+      const project = rows[0];
+
+      const memberIds = Array.from(new Set([data.createdBy, ...(data.memberIds ?? [])]));
+      if (memberIds.length) {
+        await client.query(
+          `INSERT INTO project_members (project_id, user_id)
+           SELECT $1, unnest($2::uuid[])
+           ON CONFLICT DO NOTHING`,
+          [project.id, memberIds]
+        );
+      }
+
+      await client.query('COMMIT');
+      return project;
+    } catch (err) {
+      await client.query('ROLLBACK');
+      throw err;
+    } finally {
+      client.release();
+    }
   }
 
   async update(id: string, data: { name?: string; description?: string }): Promise<Project> {
@@ -125,7 +148,7 @@ export class ProjectRepository {
             WHERE t2.project_id = p.id AND t2.assigned_to = $3)::int AS task_count
          FROM projects p
          JOIN users u ON u.id = p.created_by
-         JOIN tasks t ON t.project_id = p.id AND t.assigned_to = $3
+         JOIN project_members pm ON pm.project_id = p.id AND pm.user_id = $3
          GROUP BY p.id, u.id
          ORDER BY p.created_at DESC
          LIMIT $1 OFFSET $2`,
@@ -134,7 +157,7 @@ export class ProjectRepository {
       this.db.query<{ count: string }>(
         `SELECT COUNT(DISTINCT p.id)
          FROM projects p
-         JOIN tasks t ON t.project_id = p.id AND t.assigned_to = $1`,
+         JOIN project_members pm ON pm.project_id = p.id AND pm.user_id = $1`,
         [userId]
       ),
     ]);
@@ -167,7 +190,7 @@ export class ProjectRepository {
           WHERE t2.project_id = p.id AND t2.assigned_to = $2)::int AS task_count
        FROM projects p
        JOIN users u ON u.id = p.created_by
-       JOIN tasks t ON t.project_id = p.id AND t.assigned_to = $2
+       JOIN project_members pm ON pm.project_id = p.id AND pm.user_id = $2
        WHERE p.id = $1
        GROUP BY p.id, u.id`,
       [id, userId]
@@ -187,5 +210,16 @@ export class ProjectRepository {
         email: row.creator_email,
       },
     };
+  }
+
+  async isMember(projectId: string, userId: string): Promise<boolean> {
+    const { rows } = await this.db.query<{ exists: boolean }>(
+      `SELECT EXISTS (
+         SELECT 1 FROM project_members
+         WHERE project_id = $1 AND user_id = $2
+       ) AS exists`,
+      [projectId, userId]
+    );
+    return !!rows[0]?.exists;
   }
 }

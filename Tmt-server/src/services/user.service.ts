@@ -20,7 +20,7 @@ export class UserService {
       name:     input.name,
       email:    input.email,
       password: hashedPassword,
-      role:     input.role as Role,
+      role:     'EMPLOYEE' as Role,
     });
   }
 
@@ -40,7 +40,7 @@ export class UserService {
     const existing = await this.userRepo.findById(id);
     if (!existing) throw new AppError(404, 'User not found');
 
-    if (!input.name && !input.email && !input.password && !input.role) {
+    if (!input.name && !input.email && !input.password) {
       throw new AppError(400, 'At least one field must be provided');
     }
 
@@ -57,13 +57,16 @@ export class UserService {
       name:     input.name,
       email:    input.email?.toLowerCase().trim(),
       password: hashedPassword,
-      role:     input.role as Role | undefined,
+      role:     undefined,
     });
   }
 
   async deleteUser(id: string) {
     const user = await this.userRepo.findById(id);
     if (!user) throw new AppError(404, 'User not found');
+    if (user.email === 'admin@tmt.com' || user.name === 'System Admin') {
+      throw new AppError(403, 'System admin cannot be deleted');
+    }
     await this.userRepo.delete(id);
   }
 }

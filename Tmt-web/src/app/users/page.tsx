@@ -5,15 +5,10 @@ import toast from 'react-hot-toast';
 import AppLayout from '@/components/layout/AppLayout';
 import Button from '@/components/ui/Button';
 import Modal from '@/components/ui/Modal';
-import Input, { Select } from '@/components/ui/Input';
+import Input from '@/components/ui/Input';
 import { useAuth } from '@/context/AuthContext';
 import { useUsers } from '@/hooks/useUsers';
 import type { CreateUserForm, UpdateUserForm, User } from '@/types';
-
-const ROLE_OPTIONS = [
-  { value: 'ADMIN',    label: 'Admin' },
-  { value: 'EMPLOYEE', label: 'Employee' },
-];
 
 const ROLE_LABELS: Record<string, string> = {
   ADMIN: 'Admin',
@@ -33,23 +28,33 @@ export default function UsersPage() {
   const [showCreate, setShowCreate] = useState(false);
   const [showEdit,   setShowEdit]   = useState(false);
   const [editing,    setEditing]    = useState<User | null>(null);
+  const [showCreatePwd, setShowCreatePwd] = useState(false);
+  const [showEditPwd, setShowEditPwd] = useState(false);
 
   const [createForm, setCreateForm] = useState<CreateUserForm>({
-    name: '', email: '', password: '', role: 'EMPLOYEE',
+    name: '', email: '', password: '',
   });
   const [editForm, setEditForm] = useState<UpdateUserForm>({
-    name: '', email: '', password: '', role: 'EMPLOYEE',
+    name: '', email: '', password: '',
   });
 
   const totalUsers = meta?.total ?? 0;
   const isSelf = (u: User) => currentUser?.id === u.id;
+  const isSystemAdmin = (u: User) => u.email === 'admin@tmt.com' || u.name === 'System Admin';
 
-  const resetCreate = () => setCreateForm({ name: '', email: '', password: '', role: 'EMPLOYEE' });
-  const resetEdit = () => setEditForm({ name: '', email: '', password: '', role: 'EMPLOYEE' });
+  const resetCreate = () => {
+    setCreateForm({ name: '', email: '', password: '' });
+    setShowCreatePwd(false);
+  };
+  const resetEdit = () => {
+    setEditForm({ name: '', email: '', password: '' });
+    setShowEditPwd(false);
+  };
 
   const openEdit = (u: User) => {
     setEditing(u);
-    setEditForm({ name: u.name, email: u.email, role: u.role });
+    setEditForm({ name: u.name, email: u.email });
+    setShowEditPwd(false);
     setShowEdit(true);
   };
 
@@ -83,8 +88,6 @@ export default function UsersPage() {
     if (name && name !== editing.name) payload.name = name;
     if (email && email !== editing.email) payload.email = email;
     if (editForm.password) payload.password = editForm.password;
-    if (editForm.role && editForm.role !== editing.role) payload.role = editForm.role;
-
     if (Object.keys(payload).length === 0) {
       return toast.error('No changes to save');
     }
@@ -102,6 +105,7 @@ export default function UsersPage() {
 
   const handleDelete = async (u: User) => {
     if (isSelf(u)) return toast.error('You cannot delete your own account');
+    if (isSystemAdmin(u)) return toast.error('System admin cannot be deleted');
     if (!confirm(`Delete ${u.name}? This cannot be undone.`)) return;
     try {
       await deleteUser(u.id);
@@ -170,7 +174,12 @@ export default function UsersPage() {
               </div>
               <div className="col-span-2 flex justify-end gap-2">
                 <Button size="sm" variant="secondary" onClick={() => openEdit(u)}>Edit</Button>
-                <Button size="sm" variant="danger" disabled={isSelf(u)} onClick={() => handleDelete(u)}>
+                <Button
+                  size="sm"
+                  variant="danger"
+                  disabled={isSelf(u) || isSystemAdmin(u)}
+                  onClick={() => handleDelete(u)}
+                >
                   Delete
                 </Button>
               </div>
@@ -197,10 +206,32 @@ export default function UsersPage() {
             onChange={(e) => setCreateForm({ ...createForm, name: e.target.value })} />
           <Input label="Email" type="email" required value={createForm.email}
             onChange={(e) => setCreateForm({ ...createForm, email: e.target.value })} />
-          <Input label="Password" type="password" required value={createForm.password}
-            onChange={(e) => setCreateForm({ ...createForm, password: e.target.value })} />
-          <Select label="Role" value={createForm.role} options={ROLE_OPTIONS}
-            onChange={(e) => setCreateForm({ ...createForm, role: e.target.value as any })} />
+          <Input
+            label="Password"
+            type={showCreatePwd ? 'text' : 'password'}
+            required
+            value={createForm.password}
+            onChange={(e) => setCreateForm({ ...createForm, password: e.target.value })}
+            rightIcon={
+              <button
+                type="button"
+                onClick={() => setShowCreatePwd((v) => !v)}
+                className="text-[#8A8278] hover:text-[#1C1A18]"
+                aria-label={showCreatePwd ? 'Hide password' : 'Show password'}
+              >
+                {showCreatePwd ? (
+                  <svg className="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 3l18 18M10.9 10.9a3 3 0 104.24 4.24M9.88 4.24A10.94 10.94 0 0112 4c5.05 0 9.27 3.11 11 7.5a12.98 12.98 0 01-4.25 5.4M6.62 6.62A12.98 12.98 0 001 11.5 11.18 11.18 0 005.3 17" />
+                  </svg>
+                ) : (
+                  <svg className="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M1 12s4-7 11-7 11 7 11 7-4 7-11 7S1 12 1 12z" />
+                    <circle cx="12" cy="12" r="3" strokeWidth={2} />
+                  </svg>
+                )}
+              </button>
+            }
+          />
           <div className="flex justify-end gap-2 pt-3 border-t border-[#E8DDD4]">
             <Button variant="secondary" type="button" onClick={() => setShowCreate(false)}>Cancel</Button>
             <Button type="submit">Create User</Button>
@@ -215,11 +246,32 @@ export default function UsersPage() {
             onChange={(e) => setEditForm({ ...editForm, name: e.target.value })} />
           <Input label="Email" type="email" value={editForm.email ?? ''}
             onChange={(e) => setEditForm({ ...editForm, email: e.target.value })} />
-          <Input label="New password" type="password" placeholder="Leave blank to keep current"
+          <Input
+            label="New password"
+            type={showEditPwd ? 'text' : 'password'}
+            placeholder="Leave blank to keep current"
             value={editForm.password ?? ''}
-            onChange={(e) => setEditForm({ ...editForm, password: e.target.value })} />
-          <Select label="Role" value={editForm.role ?? 'EMPLOYEE'} options={ROLE_OPTIONS}
-            onChange={(e) => setEditForm({ ...editForm, role: e.target.value as any })} />
+            onChange={(e) => setEditForm({ ...editForm, password: e.target.value })}
+            rightIcon={
+              <button
+                type="button"
+                onClick={() => setShowEditPwd((v) => !v)}
+                className="text-[#8A8278] hover:text-[#1C1A18]"
+                aria-label={showEditPwd ? 'Hide password' : 'Show password'}
+              >
+                {showEditPwd ? (
+                  <svg className="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 3l18 18M10.9 10.9a3 3 0 104.24 4.24M9.88 4.24A10.94 10.94 0 0112 4c5.05 0 9.27 3.11 11 7.5a12.98 12.98 0 01-4.25 5.4M6.62 6.62A12.98 12.98 0 001 11.5 11.18 11.18 0 005.3 17" />
+                  </svg>
+                ) : (
+                  <svg className="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M1 12s4-7 11-7 11 7 11 7-4 7-11 7S1 12 1 12z" />
+                    <circle cx="12" cy="12" r="3" strokeWidth={2} />
+                  </svg>
+                )}
+              </button>
+            }
+          />
           <div className="flex justify-end gap-2 pt-3 border-t border-[#E8DDD4]">
             <Button variant="secondary" type="button" onClick={() => setShowEdit(false)}>Cancel</Button>
             <Button type="submit">Save Changes</Button>

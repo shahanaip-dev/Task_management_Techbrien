@@ -3,6 +3,7 @@ import { z } from 'zod';
 export const CreateProjectSchema = z.object({
   name:        z.string().min(2, 'Name must be at least 2 characters').max(200),
   description: z.string().max(1000).optional(),
+  memberIds:   z.array(z.string().uuid('Invalid user ID')).optional(),
 });
 
 export const UpdateProjectSchema = z.object({

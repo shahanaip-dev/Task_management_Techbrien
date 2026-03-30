@@ -17,9 +17,14 @@ export class TaskService {
     private readonly userRepo:    UserRepository
   ) {}
 
-  async createTask(input: CreateTaskInput) {
+  async createTask(input: CreateTaskInput, user?: { id: string; role: string }) {
     const project = await this.projectRepo.findById(input.projectId);
     if (!project) throw new AppError(404, 'Project not found');
+
+    if (user?.role === 'EMPLOYEE') {
+      const isMember = await this.projectRepo.isMember(input.projectId, user.id);
+      if (!isMember) throw new AppError(403, 'You are not a member of this project');
+    }
 
     if (input.assignedTo) {
       const user = await this.userRepo.findById(input.assignedTo);
@@ -35,7 +40,7 @@ export class TaskService {
     });
   }
 
-  async listTasks(query: Record<string, unknown>) {
+  async listTasks(query: Record<string, unknown>, user?: { id: string; role: string }) {
     const pagination = parsePagination(query);
     const filters: TaskFilters = {
       projectId:  query.projectId  as string | undefined,
@@ -45,13 +50,19 @@ export class TaskService {
       description: query.description as string | undefined,
       dueDate:    query.dueDate    as string | undefined,
     };
+    if (user?.role === 'EMPLOYEE') {
+      filters.assignedTo = user.id;
+    }
     const [tasks, total] = await this.taskRepo.findMany(filters, pagination);
     return buildPaginated(tasks, total, pagination);
   }
 
-  async getTask(id: string) {
+  async getTask(id: string, user?: { id: string; role: string }) {
     const task = await this.taskRepo.findByIdWithRelations(id);
     if (!task) throw new AppError(404, 'Task not found');
+    if (user?.role === 'EMPLOYEE' && task.assigned_to !== user.id) {
+      throw new AppError(403, 'You do not have access to this task');
+    }
     return task;
   }
 
