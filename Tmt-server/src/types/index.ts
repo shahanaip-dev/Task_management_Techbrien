@@ -1,7 +1,7 @@
 import { Request } from 'express';
 
 // ── Domain enums ───────────────────────────────────────────────────────────
-export type Role       = 'ADMIN' | 'DEVELOPER';
+export type Role       = 'ADMIN' | 'EMPLOYEE';
 export type TaskStatus = 'TODO'  | 'IN_PROGRESS' | 'DONE';
 
 // ── Authenticated request (after JWT middleware) ───────────────────────────
@@ -87,4 +87,7 @@ export interface TaskFilters {
   projectId?:  string;
   status?:     TaskStatus;
   assignedTo?: string;
+  title?:      string;
+  description?: string;
+  dueDate?:    string;
 }

@@ -41,6 +41,9 @@ export class TaskService {
       projectId:  query.projectId  as string | undefined,
       status:     query.status     as TaskStatus | undefined,
       assignedTo: query.assignedTo as string | undefined,
+      title:      query.title      as string | undefined,
+      description: query.description as string | undefined,
+      dueDate:    query.dueDate    as string | undefined,
     };
     const [tasks, total] = await this.taskRepo.findMany(filters, pagination);
     return buildPaginated(tasks, total, pagination);

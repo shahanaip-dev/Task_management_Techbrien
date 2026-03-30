@@ -27,6 +27,9 @@ export const TaskQuerySchema = z.object({
   projectId:  z.string().uuid().optional(),
   status:     z.enum(['TODO', 'IN_PROGRESS', 'DONE']).optional(),
   assignedTo: z.string().uuid().optional(),
+  title:      z.string().optional(),
+  description: z.string().optional(),
+  dueDate:    z.string().optional(),
   limit:      z.string().optional(),
   offset:     z.string().optional(),
 });

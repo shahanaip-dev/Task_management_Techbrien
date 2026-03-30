@@ -1,6 +1,6 @@
 'use client';
 
-import { Select } from '@/components/ui/Input';
+import Input, { Select } from '@/components/ui/Input';
 import type { Project, User, TaskFilters as Filters } from '@/types';
 
 interface TaskFiltersProps {
@@ -20,12 +20,19 @@ const STATUS_OPTIONS = [
 export default function TaskFilters({ filters, onChange, onReset, projects, users }: TaskFiltersProps) {
   const projectOptions = projects.map((p) => ({ value: p.id, label: p.name }));
   const userOptions    = users.map((u)    => ({ value: u.id, label: u.name }));
-  const hasActive      = !!(filters.projectId || filters.status || filters.assignedTo);
+
+  const hasActive = !!(filters.projectId || filters.status || filters.dueDate);
+
+  const searchIcon = (
+    <svg className="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor">
+      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-4.35-4.35m1.85-5.4a7.25 7.25 0 11-14.5 0 7.25 7.25 0 0114.5 0z" />
+    </svg>
+  );
 
   return (
-    <div className="bg-white rounded-lg border border-[#E8DDD4] px-6 py-5">
+    <div className="bg-white rounded-xl border border-[#E8DDD4] px-6 py-5 shadow-sm">
       <div className="flex items-center justify-between mb-5">
-        <span className="text-sm font-medium text-[#1C1A18] tracking-wide">Filters</span>
+        <span className="text-sm font-semibold text-[#1C1A18] tracking-wide">Filters</span>
         {hasActive && (
           <button
             onClick={onReset}
@@ -42,6 +49,7 @@ export default function TaskFilters({ filters, onChange, onReset, projects, user
           value={filters.projectId ?? ''}
           placeholder="All projects"
           onChange={(e) => onChange({ ...filters, projectId: e.target.value || undefined })}
+          leftIcon={searchIcon}
         />
         <Select
           label="Status"
@@ -49,13 +57,14 @@ export default function TaskFilters({ filters, onChange, onReset, projects, user
           value={filters.status ?? ''}
           placeholder="All statuses"
           onChange={(e) => onChange({ ...filters, status: (e.target.value as any) || undefined })}
+          leftIcon={searchIcon}
         />
-        <Select
-          label="Assignee"
-          options={userOptions}
-          value={filters.assignedTo ?? ''}
-          placeholder="All assignees"
-          onChange={(e) => onChange({ ...filters, assignedTo: e.target.value || undefined })}
+        <Input
+          label="Due date"
+          type="date"
+          value={filters.dueDate ?? ''}
+          onChange={(e) => onChange({ ...filters, dueDate: e.target.value || undefined })}
+          leftIcon={searchIcon}
         />
       </div>
     </div>

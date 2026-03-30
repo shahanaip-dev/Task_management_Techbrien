@@ -15,7 +15,7 @@ datasource db {
 
 enum Role {
   ADMIN
-  DEVELOPER
+  EMPLOYEE
 }
 
 enum TaskStatus {
@@ -26,13 +26,13 @@ enum TaskStatus {
 
 // ─── Models ────────────────────────────────────────────────────────────────
 
-/// Represents a system user (admin or developer)
+/// Represents a system user (admin or employee)
 model User {
   id        String   @id @default(uuid())
   name      String   @db.VarChar(100)
   email     String   @unique @db.VarChar(255)
   password  String   /// bcrypt hashed
-  role      Role     @default(DEVELOPER)
+  role      Role     @default(EMPLOYEE)
   createdAt DateTime @default(now()) @map("created_at")
 
   // Relations

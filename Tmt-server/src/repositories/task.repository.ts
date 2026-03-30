@@ -101,6 +101,9 @@ export class TaskRepository {
     if (filters.projectId)  { conditions.push(`t.project_id  = $${idx++}`); values.push(filters.projectId); }
     if (filters.status)     { conditions.push(`t.status       = $${idx++}`); values.push(filters.status); }
     if (filters.assignedTo) { conditions.push(`t.assigned_to  = $${idx++}`); values.push(filters.assignedTo); }
+    if (filters.title)      { conditions.push(`t.title ILIKE $${idx++}`); values.push(`%${filters.title}%`); }
+    if (filters.description) { conditions.push(`t.description ILIKE $${idx++}`); values.push(`%${filters.description}%`); }
+    if (filters.dueDate)    { conditions.push(`t.due_date::date = $${idx++}`); values.push(filters.dueDate); }
 
     const where = conditions.length ? `WHERE ${conditions.join(' AND ')}` : '';
 

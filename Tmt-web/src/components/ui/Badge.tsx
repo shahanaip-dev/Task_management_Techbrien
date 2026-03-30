@@ -25,6 +25,7 @@ export function StatusBadge({ status }: { status: TaskStatus }) {
 }
 
 export function RoleBadge({ role }: { role: string }) {
+  const label = role === 'EMPLOYEE' ? 'Employee' : role === 'ADMIN' ? 'Admin' : role;
   return (
     <span className={clsx(
       'inline-flex items-center px-2 py-0.5 rounded text-[10px] font-semibold tracking-widest',
@@ -32,7 +33,7 @@ export function RoleBadge({ role }: { role: string }) {
         ? 'bg-[#F5E6DC] text-[#7D1F1F] border border-[#7D1F1F]/20'
         : 'bg-[#EDF2FF] text-[#3B5BDB] border border-[#3B5BDB]/20'
     )}>
-      {role}
+      {label}
     </span>
   );
 }

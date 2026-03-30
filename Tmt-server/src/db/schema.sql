@@ -4,7 +4,7 @@
 
 -- ─── Enums ───────────────────────────────────────────────────────────────────
 
-CREATE TYPE user_role AS ENUM ('ADMIN', 'DEVELOPER');
+CREATE TYPE user_role AS ENUM ('ADMIN', 'EMPLOYEE');
 CREATE TYPE task_status AS ENUM ('TODO', 'IN_PROGRESS', 'DONE');
 
 -- ─── Users ───────────────────────────────────────────────────────────────────
@@ -14,7 +14,7 @@ CREATE TABLE IF NOT EXISTS users (
   name        VARCHAR(100)  NOT NULL,
   email       VARCHAR(255)  NOT NULL UNIQUE,
   password    TEXT          NOT NULL,   -- bcrypt hashed
-  role        user_role     NOT NULL DEFAULT 'DEVELOPER',
+  role        user_role     NOT NULL DEFAULT 'EMPLOYEE',
   created_at  TIMESTAMPTZ   NOT NULL DEFAULT NOW()
 );
 

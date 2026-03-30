@@ -11,9 +11,14 @@ import { useUsers } from '@/hooks/useUsers';
 import type { CreateUserForm, UpdateUserForm, User } from '@/types';
 
 const ROLE_OPTIONS = [
-  { value: 'ADMIN',     label: 'Admin' },
-  { value: 'DEVELOPER', label: 'Developer' },
+  { value: 'ADMIN',    label: 'Admin' },
+  { value: 'EMPLOYEE', label: 'Employee' },
 ];
+
+const ROLE_LABELS: Record<string, string> = {
+  ADMIN: 'Admin',
+  EMPLOYEE: 'Employee',
+};
 
 function formatDate(value?: string) {
   if (!value) return '—';
@@ -30,17 +35,17 @@ export default function UsersPage() {
   const [editing,    setEditing]    = useState<User | null>(null);
 
   const [createForm, setCreateForm] = useState<CreateUserForm>({
-    name: '', email: '', password: '', role: 'DEVELOPER',
+    name: '', email: '', password: '', role: 'EMPLOYEE',
   });
   const [editForm, setEditForm] = useState<UpdateUserForm>({
-    name: '', email: '', password: '', role: 'DEVELOPER',
+    name: '', email: '', password: '', role: 'EMPLOYEE',
   });
 
   const totalUsers = meta?.total ?? 0;
   const isSelf = (u: User) => currentUser?.id === u.id;
 
-  const resetCreate = () => setCreateForm({ name: '', email: '', password: '', role: 'DEVELOPER' });
-  const resetEdit = () => setEditForm({ name: '', email: '', password: '', role: 'DEVELOPER' });
+  const resetCreate = () => setCreateForm({ name: '', email: '', password: '', role: 'EMPLOYEE' });
+  const resetEdit = () => setEditForm({ name: '', email: '', password: '', role: 'EMPLOYEE' });
 
   const openEdit = (u: User) => {
     setEditing(u);
@@ -159,7 +164,7 @@ export default function UsersPage() {
             <div key={u.id} className="grid grid-cols-12 gap-3 px-5 py-4 border-t border-[#E8DDD4] text-sm">
               <div className="col-span-3 font-medium text-[#1C1A18]">{u.name}</div>
               <div className="col-span-3 text-[#6B6860]">{u.email}</div>
-              <div className="col-span-2 text-[#6B6860]">{u.role}</div>
+              <div className="col-span-2 text-[#6B6860]">{ROLE_LABELS[u.role] ?? u.role}</div>
               <div className="col-span-2 text-[#6B6860]">
                 {formatDate((u as any).created_at ?? (u as any).createdAt)}
               </div>
@@ -213,7 +218,7 @@ export default function UsersPage() {
           <Input label="New password" type="password" placeholder="Leave blank to keep current"
             value={editForm.password ?? ''}
             onChange={(e) => setEditForm({ ...editForm, password: e.target.value })} />
-          <Select label="Role" value={editForm.role ?? 'DEVELOPER'} options={ROLE_OPTIONS}
+          <Select label="Role" value={editForm.role ?? 'EMPLOYEE'} options={ROLE_OPTIONS}
             onChange={(e) => setEditForm({ ...editForm, role: e.target.value as any })} />
           <div className="flex justify-end gap-2 pt-3 border-t border-[#E8DDD4]">
             <Button variant="secondary" type="button" onClick={() => setShowEdit(false)}>Cancel</Button>

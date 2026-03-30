@@ -32,7 +32,7 @@ describe('AuthService.login', () => {
     name:      'Test User',
     email:     'test@example.com',
     password:  'hashed_password',
-    role:      Role.DEVELOPER,
+    role:      Role.EMPLOYEE,
     createdAt: new Date(),
   };
 

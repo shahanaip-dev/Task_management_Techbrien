@@ -3,7 +3,7 @@ import { Role, AuthenticatedRequest } from '../types';
 
 /**
  * RBAC middleware factory.
- * Usage: authorize('ADMIN') or authorize('ADMIN', 'DEVELOPER')
+ * Usage: authorize('ADMIN') or authorize('ADMIN', 'EMPLOYEE')
  */
 export function authorize(...allowedRoles: Role[]) {
   return (req: AuthenticatedRequest, res: Response, next: NextFunction): void => {

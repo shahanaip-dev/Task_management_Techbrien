@@ -1,5 +1,5 @@
 // ── Enums ──────────────────────────────────────────────────────────────────
-export type Role       = 'ADMIN' | 'DEVELOPER';
+export type Role       = 'ADMIN' | 'EMPLOYEE';
 export type TaskStatus = 'TODO'  | 'IN_PROGRESS' | 'DONE';
 
 // ── Domain models ──────────────────────────────────────────────────────────
@@ -83,4 +83,7 @@ export interface TaskFilters {
   projectId?:  string;
   status?:     TaskStatus | '';
   assignedTo?: string;
+  title?:      string;
+  description?: string;
+  dueDate?:    string;
 }

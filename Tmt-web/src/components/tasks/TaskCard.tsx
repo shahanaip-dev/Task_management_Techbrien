@@ -8,6 +8,7 @@ interface TaskCardProps {
   task:           Task;
   onStatusChange: (id: string, status: TaskStatus) => void;
   onDelete:       (id: string) => void;
+  onEdit:         (task: Task) => void;
 }
 
 const STATUS_OPTIONS = [
@@ -16,7 +17,7 @@ const STATUS_OPTIONS = [
   { value: 'DONE',        label: 'Done'        },
 ];
 
-export default function TaskCard({ task, onStatusChange, onDelete }: TaskCardProps) {
+export default function TaskCard({ task, onStatusChange, onDelete, onEdit }: TaskCardProps) {
   const dueDate = task.dueDate
     ? new Date(task.dueDate).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })
     : null;
@@ -24,18 +25,29 @@ export default function TaskCard({ task, onStatusChange, onDelete }: TaskCardPro
 
   return (
     <div className="bg-white rounded-lg border border-[#E8DDD4] p-5 hover:shadow-md hover:border-[#C4B8AD] transition-all duration-200 group">
-      {/* Title + delete */}
+      {/* Title + actions */}
       <div className="flex items-start justify-between gap-2 mb-2">
         <h4 className="font-medium text-[#1C1A18] text-sm leading-snug">{task.title}</h4>
-        <button
-          onClick={() => onDelete(task.id)}
-          className="flex-shrink-0 p-1 text-[#C4B8AD] hover:text-red-500 rounded opacity-0 group-hover:opacity-100 transition-all duration-200"
-          title="Delete task"
-        >
-          <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-          </svg>
-        </button>
+        <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-all duration-200">
+          <button
+            onClick={() => onEdit(task)}
+            className="flex-shrink-0 p-1 text-[#8A8278] hover:text-[#1C1A18] rounded"
+            title="Edit task"
+          >
+            <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15.232 5.232a2.828 2.828 0 014 4L7 21H3v-4L15.232 5.232z" />
+            </svg>
+          </button>
+          <button
+            onClick={() => onDelete(task.id)}
+            className="flex-shrink-0 p-1 text-[#C4B8AD] hover:text-red-500 rounded"
+            title="Delete task"
+          >
+            <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+            </svg>
+          </button>
+        </div>
       </div>
 
       {task.description && (

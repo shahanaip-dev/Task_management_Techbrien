@@ -23,6 +23,9 @@ export function useTasks(filters: TaskFilters = {}, initialLimit = 10) {
         status:     filters.status     || undefined,
         projectId:  filters.projectId  || undefined,
         assignedTo: filters.assignedTo || undefined,
+        title:      filters.title      || undefined,
+        description: filters.description || undefined,
+        dueDate:    filters.dueDate    || undefined,
       };
       const res = await tasksApi.list(params);
       setTasks(res.data.data.data);
@@ -47,6 +50,14 @@ export function useTasks(filters: TaskFilters = {}, initialLimit = 10) {
     await fetchTasks();
   }, [fetchTasks]);
 
+  const updateTask = useCallback(async (
+    id: string,
+    data: Partial<CreateTaskForm> & { dueDate?: string | null; assignedTo?: string | null }
+  ) => {
+    await tasksApi.update(id, data);
+    await fetchTasks();
+  }, [fetchTasks]);
+
   const deleteTask = useCallback(async (id: string) => {
     await tasksApi.delete(id);
     await fetchTasks();
@@ -55,7 +66,7 @@ export function useTasks(filters: TaskFilters = {}, initialLimit = 10) {
   return {
     tasks, meta, loading, error,
     offset, setOffset,
-    createTask, updateTaskStatus, deleteTask,
+    createTask, updateTaskStatus, updateTask, deleteTask,
     refresh: fetchTasks,
   };
 }

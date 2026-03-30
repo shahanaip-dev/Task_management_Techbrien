@@ -44,7 +44,7 @@ export default function DashboardPage() {
       {/* Page header */}
       <div className="flex items-center justify-between mb-8">
         <div>
-          <h1 className="font-serif text-2xl font-semibold text-[#1C1A18]">Projects</h1>
+          <h1 className="font-serif text-2xl font-semibold text-[#4B1414]">Projects</h1>
           <p className="text-sm text-[#8A8278] mt-0.5 font-light">
             {meta ? `${meta.total} project${meta.total !== 1 ? 's' : ''}` : '—'}
           </p>
@@ -61,20 +61,15 @@ export default function DashboardPage() {
 
       {/* Stats row */}
       {!loading && meta && meta.total > 0 && (
-        <div className="grid grid-cols-3 gap-4 mb-8">
+        <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-8">
           {[
-            { label: 'Total Projects', value: meta.total, icon: '📁' },
-            { label: 'Active',         value: projects.length, icon: '🟢' },
-            { label: 'Total Tasks',    value: projects.reduce((s, p) => s + (p._count?.tasks ?? 0), 0), icon: '✅' },
+            { label: 'Total Projects', value: meta.total },
+            { label: 'Active Projects', value: projects.length },
+            { label: 'Total Tasks', value: projects.reduce((s, p) => s + (p._count?.tasks ?? 0), 0) },
           ].map((stat) => (
-            <div key={stat.label} className="bg-white rounded-lg border border-[#E8DDD4] px-5 py-4">
-              <div className="flex items-center justify-between">
-                <div>
-                  <p className="text-xs text-[#8A8278] uppercase tracking-wide font-medium">{stat.label}</p>
-                  <p className="font-serif text-2xl font-semibold text-[#1C1A18] mt-1">{stat.value}</p>
-                </div>
-                <span className="text-2xl">{stat.icon}</span>
-              </div>
+            <div key={stat.label} className="bg-[#F1E7E7] rounded-lg border border-[#C6A0A0] px-5 py-4">
+              <p className="text-xs text-[#5B2F2F] uppercase tracking-wide font-medium">{stat.label}</p>
+              <p className="font-serif text-2xl font-semibold text-[#4B1414] mt-1">{stat.value}</p>
             </div>
           ))}
         </div>
@@ -84,7 +79,7 @@ export default function DashboardPage() {
       {loading ? (
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5">
           {Array.from({ length: 6 }).map((_, i) => (
-            <div key={i} className="h-44 bg-white rounded-lg border border-[#E8DDD4] animate-pulse" />
+            <div key={i} className="h-44 bg-white rounded-lg border border-[#C6A0A0] animate-pulse" />
           ))}
         </div>
       ) : projects.length === 0 ? (
@@ -95,7 +90,7 @@ export default function DashboardPage() {
                 d="M9 13h6m-3-3v6m-9 1V7a2 2 0 012-2h6l2 2h6a2 2 0 012 2v8a2 2 0 01-2 2H5a2 2 0 01-2-2z" />
             </svg>
           </div>
-          <h3 className="font-serif text-xl font-semibold text-[#1C1A18] mb-2">
+          <h3 className="font-serif text-xl font-semibold text-[#4B1414] mb-2">
             {isAdmin ? 'No projects yet' : 'No assigned projects'}
           </h3>
           <p className="text-sm text-[#8A8278] mb-7 font-light">
@@ -130,7 +125,7 @@ export default function DashboardPage() {
               value={form.name} onChange={(e) => setForm({ ...form, name: e.target.value })} />
             <Textarea label="Description" placeholder="What is this project about?"
               value={form.description ?? ''} onChange={(e) => setForm({ ...form, description: e.target.value })} />
-            <div className="flex justify-end gap-2 pt-3 border-t border-[#E8DDD4]">
+            <div className="flex justify-end gap-2 pt-3 border-t border-[#C6A0A0]">
               <Button variant="secondary" type="button" onClick={() => setShowModal(false)}>Cancel</Button>
               <Button type="submit" loading={saving}>Create Project</Button>
             </div>
@@ -140,3 +135,6 @@ export default function DashboardPage() {
     </AppLayout>
   );
 }
+
+
+

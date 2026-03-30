@@ -7,12 +7,13 @@ import AppLayout from '@/components/layout/AppLayout';
 import TaskCard from '@/components/tasks/TaskCard';
 import TaskFilters from '@/components/tasks/TaskFilters';
 import CreateTaskModal from '@/components/tasks/CreateTaskModal';
+import EditTaskModal from '@/components/tasks/EditTaskModal';
 import Button from '@/components/ui/Button';
 import { StatusBadge } from '@/components/ui/Badge';
 import { useTasks } from '@/hooks/useTasks';
 import { useProjects } from '@/hooks/useProjects';
 import { usersApi } from '@/lib/api';
-import type { User, TaskFilters as Filters, TaskStatus } from '@/types';
+import type { User, Task, TaskFilters as Filters, TaskStatus } from '@/types';
 
 function TasksPageInner() {
   const searchParams     = useSearchParams();
@@ -20,9 +21,10 @@ function TasksPageInner() {
 
   const [filters,   setFilters]   = useState<Filters>({ projectId: defaultProjectId });
   const [showModal, setShowModal] = useState(false);
+  const [editingTask, setEditingTask] = useState<Task | null>(null);
   const [users,     setUsers]     = useState<User[]>([]);
 
-  const { tasks, meta, loading, error, createTask, updateTaskStatus, deleteTask, offset, setOffset } =
+  const { tasks, meta, loading, error, createTask, updateTaskStatus, updateTask, deleteTask, offset, setOffset } =
     useTasks(filters, 12);
   const { projects } = useProjects(100);
 
@@ -51,6 +53,11 @@ function TasksPageInner() {
     if (!confirm('Delete this task?')) return;
     try { await deleteTask(id); toast.success('Task deleted'); }
     catch { toast.error('Failed to delete task'); }
+  };
+
+  const handleEditSave = async (id: string, data: any) => {
+    try { await updateTask(id, data); toast.success('Task updated'); }
+    catch (err: any) { toast.error(err?.response?.data?.message ?? 'Failed to update task'); throw err; }
   };
 
   return (
@@ -124,7 +131,13 @@ function TasksPageInner() {
       ) : (
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
           {tasks.map((task) => (
-            <TaskCard key={task.id} task={task} onStatusChange={handleStatus} onDelete={handleDelete} />
+            <TaskCard
+              key={task.id}
+              task={task}
+              onStatusChange={handleStatus}
+              onDelete={handleDelete}
+              onEdit={(t) => setEditingTask(t)}
+            />
           ))}
         </div>
       )}
@@ -147,6 +160,14 @@ function TasksPageInner() {
         projects={projects}
         users={users}
         defaultProjectId={filters.projectId}
+      />
+
+      <EditTaskModal
+        isOpen={!!editingTask}
+        onClose={() => setEditingTask(null)}
+        onSubmit={handleEditSave}
+        task={editingTask}
+        users={users}
       />
     </AppLayout>
   );
