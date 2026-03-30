@@ -1,0 +1,82 @@
+// ─── Prisma Schema ─────────────────────────────────────────────────────────
+// Provider: PostgreSQL
+// ORM: Prisma v5
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+// ─── Enums ─────────────────────────────────────────────────────────────────
+
+enum Role {
+  ADMIN
+  DEVELOPER
+}
+
+enum TaskStatus {
+  TODO
+  IN_PROGRESS
+  DONE
+}
+
+// ─── Models ────────────────────────────────────────────────────────────────
+
+/// Represents a system user (admin or developer)
+model User {
+  id        String   @id @default(uuid())
+  name      String   @db.VarChar(100)
+  email     String   @unique @db.VarChar(255)
+  password  String   /// bcrypt hashed
+  role      Role     @default(DEVELOPER)
+  createdAt DateTime @default(now()) @map("created_at")
+
+  // Relations
+  projects Project[] @relation("ProjectCreator")
+  tasks    Task[]    @relation("TaskAssignee")
+
+  @@index([email])
+  @@map("users")
+}
+
+/// Represents a company project
+model Project {
+  id          String   @id @default(uuid())
+  name        String   @db.VarChar(200)
+  description String?  @db.Text
+  createdBy   String   @map("created_by")
+  createdAt   DateTime @default(now()) @map("created_at")
+
+  // Relations
+  creator User   @relation("ProjectCreator", fields: [createdBy], references: [id], onDelete: Restrict)
+  tasks   Task[]
+
+  @@index([createdBy])
+  @@map("projects")
+}
+
+/// Represents a task within a project
+model Task {
+  id          String     @id @default(uuid())
+  title       String     @db.VarChar(300)
+  description String?    @db.Text
+  status      TaskStatus @default(TODO)
+  projectId   String     @map("project_id")
+  assignedTo  String?    @map("assigned_to")
+  dueDate     DateTime?  @map("due_date")
+  createdAt   DateTime   @default(now()) @map("created_at")
+
+  // Relations
+  project  Project @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  assignee User?   @relation("TaskAssignee", fields: [assignedTo], references: [id], onDelete: SetNull)
+
+  @@index([projectId])
+  @@index([assignedTo])
+  @@index([status])
+  @@index([projectId, status]) // composite index for filtered queries
+  @@map("tasks")
+}

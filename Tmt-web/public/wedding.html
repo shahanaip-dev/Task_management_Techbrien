@@ -1,0 +1,549 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Sanches Liza — Floral Designer & Wedding Planner</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,500;0,600;0,700;1,400;1,500;1,700&family=Cormorant+Garamond:ital,wght@0,300;0,400;0,500;1,300;1,400&family=Jost:wght@300;400;500&display=swap" rel="stylesheet" />
+
+  <style>
+    /* ─── CSS Variables ─────────────────────────────────────────────── */
+    :root {
+      --cream:    #FAF7F2;
+      --blush:    #F5E6DC;
+      --blush2:   #EDD5C5;
+      --burgundy: #7D1F1F;
+      --burg-dk:  #5C1616;
+      --charcoal: #1C1A18;
+      --warm-gray:#8A8278;
+      --border:   #E2D9CF;
+      --serif:    'Playfair Display', Georgia, serif;
+      --italic:   'Cormorant Garamond', Georgia, serif;
+      --sans:     'Jost', sans-serif;
+    }
+
+    /* ─── Reset ─────────────────────────────────────────────────────── */
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    html { scroll-behavior: smooth; }
+    body {
+      background: var(--cream);
+      color: var(--charcoal);
+      font-family: var(--sans);
+      font-weight: 300;
+      line-height: 1.7;
+      overflow-x: hidden;
+    }
+    img { display: block; width: 100%; height: 100%; object-fit: cover; }
+    a { text-decoration: none; color: inherit; }
+
+    /* ─── Page fade-in ──────────────────────────────────────────────── */
+    @keyframes fadeUp {
+      from { opacity: 0; transform: translateY(28px); }
+      to   { opacity: 1; transform: translateY(0); }
+    }
+    .reveal { opacity: 0; animation: fadeUp .9s cubic-bezier(.25,.8,.25,1) forwards; }
+    .d1 { animation-delay: .1s; } .d2 { animation-delay: .25s; }
+    .d3 { animation-delay: .4s;  } .d4 { animation-delay: .55s; }
+    .d5 { animation-delay: .7s;  } .d6 { animation-delay: .85s; }
+
+    /* ─── NAV ───────────────────────────────────────────────────────── */
+    nav {
+      position: sticky; top: 0; z-index: 100;
+      background: rgba(250,247,242,.92);
+      backdrop-filter: blur(12px);
+      border-bottom: 1px solid var(--border);
+      padding: 0 5vw;
+      height: 68px;
+      display: flex; align-items: center; justify-content: space-between;
+    }
+    .nav-links { display: flex; gap: 36px; list-style: none; }
+    .nav-links a {
+      font-size: 13px; font-weight: 400; letter-spacing: .08em;
+      text-transform: uppercase; color: var(--warm-gray);
+      transition: color .25s;
+    }
+    .nav-links a:hover { color: var(--charcoal); }
+    .logo {
+      font-family: var(--serif); font-size: 17px; font-weight: 600;
+      letter-spacing: .04em; color: var(--charcoal);
+      display: flex; align-items: center; gap: 7px;
+    }
+    .logo-diamond { color: var(--burgundy); font-size: 13px; }
+    .btn-talk {
+      font-size: 12px; font-weight: 400; letter-spacing: .1em;
+      text-transform: uppercase;
+      border: 1px solid var(--charcoal); padding: 9px 22px;
+      transition: background .25s, color .25s;
+    }
+    .btn-talk:hover { background: var(--charcoal); color: var(--cream); }
+
+    /* ─── HERO ──────────────────────────────────────────────────────── */
+    .hero {
+      min-height: calc(100vh - 68px);
+      display: grid; grid-template-columns: 1fr 1fr;
+      align-items: center;
+      padding: 60px 5vw 80px;
+      gap: 40px;
+    }
+    .hero-text { max-width: 500px; }
+    .hero-text h1 {
+      font-family: var(--serif);
+      font-size: clamp(2.8rem, 5vw, 4.4rem);
+      font-weight: 700; font-style: italic;
+      line-height: 1.12;
+      letter-spacing: -.01em;
+      margin-bottom: 22px;
+      color: var(--charcoal);
+    }
+    .hero-text h1 span { font-style: normal; }
+    .hero-text p {
+      font-size: 14.5px; line-height: 1.8; color: var(--warm-gray);
+      max-width: 360px; margin-bottom: 38px;
+    }
+    .btn-primary {
+      display: inline-block;
+      background: var(--burgundy); color: #fff;
+      font-family: var(--sans); font-size: 13px;
+      font-weight: 400; letter-spacing: .1em;
+      text-transform: uppercase; padding: 14px 32px;
+      transition: background .3s, transform .2s;
+    }
+    .btn-primary:hover { background: var(--burg-dk); transform: translateY(-2px); }
+
+    /* Hero collage */
+    .hero-collage {
+      position: relative; height: 520px;
+    }
+    .hero-collage .img-a {
+      position: absolute; width: 62%; height: 75%;
+      top: 0; right: 0;
+      box-shadow: 0 20px 60px rgba(0,0,0,.12);
+    }
+    .hero-collage .img-b {
+      position: absolute; width: 45%; height: 55%;
+      bottom: 0; left: 0;
+      box-shadow: 0 20px 50px rgba(0,0,0,.1);
+    }
+    .hero-collage .img-c {
+      position: absolute; width: 30%; height: 36%;
+      bottom: 60px; right: 4%;
+      box-shadow: 0 12px 40px rgba(0,0,0,.1);
+      border: 4px solid var(--cream);
+    }
+    .hero-collage img { transition: transform .5s ease; }
+    .hero-collage:hover img { transform: scale(1.02); }
+
+    /* ─── DIVIDER ─────────────────────────────────────────────────── */
+    .divider {
+      display: flex; align-items: center; gap: 20px;
+      padding: 0 5vw; margin: 20px 0;
+    }
+    .divider-line { flex: 1; height: 1px; background: var(--border); }
+    .divider span {
+      font-size: 11px; letter-spacing: .15em;
+      text-transform: uppercase; color: var(--warm-gray);
+    }
+
+    /* ─── SECTION COMMON ─────────────────────────────────────────── */
+    section { padding: 90px 5vw; }
+    .section-label {
+      display: inline-block;
+      background: var(--blush); color: var(--burgundy);
+      font-size: 11px; font-weight: 500; letter-spacing: .14em;
+      text-transform: uppercase; padding: 5px 14px;
+      border-radius: 20px; margin-bottom: 20px;
+    }
+    .section-title {
+      font-family: var(--serif);
+      font-size: clamp(2rem, 3.5vw, 3rem);
+      font-weight: 600; line-height: 1.2;
+      color: var(--charcoal);
+    }
+    .section-sub {
+      font-size: 14.5px; color: var(--warm-gray);
+      max-width: 420px; line-height: 1.8; margin-top: 12px;
+    }
+
+    /* ─── SERVICES ───────────────────────────────────────────────── */
+    .services-header {
+      text-align: center; margin-bottom: 56px;
+    }
+    .services-header .section-sub { margin: 12px auto 0; }
+    .services-grid {
+      display: grid; grid-template-columns: repeat(3, 1fr); gap: 24px;
+    }
+    .service-card {
+      position: relative; overflow: hidden;
+      cursor: pointer;
+    }
+    .service-card-img {
+      height: 340px; overflow: hidden;
+    }
+    .service-card-img img {
+      transition: transform .6s cubic-bezier(.25,.8,.25,1);
+    }
+    .service-card:hover .service-card-img img { transform: scale(1.07); }
+    .service-card-label {
+      position: absolute; bottom: 0; left: 0; right: 0;
+      background: rgba(250,247,242,.92);
+      padding: 18px 22px;
+      display: flex; align-items: center; justify-content: space-between;
+      border-top: 1px solid var(--border);
+      backdrop-filter: blur(6px);
+    }
+    .service-card-label h3 {
+      font-family: var(--serif); font-size: 18px; font-weight: 500;
+    }
+    .learn-more {
+      font-size: 12px; letter-spacing: .1em; text-transform: uppercase;
+      color: var(--burgundy); font-weight: 400;
+      position: relative;
+    }
+    .learn-more::after {
+      content: ''; position: absolute; bottom: -2px; left: 0;
+      width: 0; height: 1px; background: var(--burgundy);
+      transition: width .3s;
+    }
+    .service-card:hover .learn-more::after { width: 100%; }
+
+    /* ─── ABOUT ──────────────────────────────────────────────────── */
+    .about-inner {
+      display: grid; grid-template-columns: 1fr 1fr;
+      gap: 80px; align-items: center;
+    }
+    .about-label {
+      font-size: 11px; letter-spacing: .15em; text-transform: uppercase;
+      color: var(--burgundy); margin-bottom: 16px;
+    }
+    .about-text h2 {
+      font-family: var(--serif);
+      font-size: clamp(2rem, 3vw, 2.8rem);
+      font-weight: 600; line-height: 1.2;
+      margin-bottom: 24px;
+    }
+    .about-text p { font-size: 14.5px; color: var(--warm-gray); line-height: 1.85; margin-bottom: 40px; }
+    .stats { display: flex; gap: 48px; }
+    .stat-num {
+      font-family: var(--serif); font-size: 2.4rem;
+      font-weight: 700; color: var(--charcoal); line-height: 1;
+    }
+    .stat-label {
+      font-size: 12px; color: var(--warm-gray);
+      letter-spacing: .04em; margin-top: 6px;
+      max-width: 100px; line-height: 1.4;
+    }
+    .about-collage {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      grid-template-rows: 200px 180px;
+      gap: 12px;
+    }
+    .about-collage .ph1 { grid-column: 1 / 3; overflow: hidden; }
+    .about-collage .ph2,
+    .about-collage .ph3 { overflow: hidden; }
+    .about-collage img { transition: transform .6s ease; }
+    .about-collage div:hover img { transform: scale(1.05); }
+
+    /* ─── INSTAGRAM ──────────────────────────────────────────────── */
+    .instagram { text-align: center; }
+    .instagram h2 {
+      font-family: var(--serif); font-size: clamp(2rem, 3vw, 2.6rem);
+      font-weight: 500; margin-bottom: 6px;
+    }
+    .instagram .handle {
+      font-size: 13px; color: var(--warm-gray); margin-bottom: 44px;
+    }
+    .insta-grid {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      grid-template-rows: repeat(2, 220px);
+      gap: 10px;
+    }
+    .insta-cell { overflow: hidden; position: relative; cursor: pointer; }
+    .insta-cell img { transition: transform .6s ease; }
+    .insta-cell:hover img { transform: scale(1.08); }
+    .insta-overlay {
+      position: absolute; inset: 0;
+      background: rgba(125,31,31,.0);
+      display: flex; align-items: center; justify-content: center;
+      transition: background .4s;
+    }
+    .insta-overlay span {
+      color: white; font-size: 22px; opacity: 0;
+      transition: opacity .4s;
+    }
+    .insta-cell:hover .insta-overlay { background: rgba(125,31,31,.35); }
+    .insta-cell:hover .insta-overlay span { opacity: 1; }
+
+    /* ─── CTA ────────────────────────────────────────────────────── */
+    .cta-section {
+      background: var(--blush);
+      text-align: center; padding: 100px 5vw;
+    }
+    .cta-section h2 {
+      font-family: var(--serif);
+      font-size: clamp(2.2rem, 4vw, 3.6rem);
+      font-weight: 600; line-height: 1.2;
+      max-width: 580px; margin: 0 auto 16px;
+    }
+    .cta-section p {
+      font-size: 14.5px; color: var(--warm-gray);
+      max-width: 400px; margin: 0 auto 40px; line-height: 1.8;
+    }
+    .btn-burg {
+      display: inline-block;
+      background: var(--burgundy); color: #fff;
+      font-size: 13px; font-weight: 400;
+      letter-spacing: .1em; text-transform: uppercase;
+      padding: 15px 40px;
+      transition: background .3s, transform .2s;
+    }
+    .btn-burg:hover { background: var(--burg-dk); transform: translateY(-2px); }
+
+    /* ─── FOOTER ─────────────────────────────────────────────────── */
+    footer {
+      background: var(--cream);
+      border-top: 1px solid var(--border);
+      padding: 40px 5vw;
+      display: flex; flex-direction: column;
+      align-items: center; gap: 20px;
+    }
+    .footer-logo {
+      font-family: var(--serif); font-size: 16px; font-weight: 600;
+      display: flex; align-items: center; gap: 7px;
+    }
+    .footer-links {
+      display: flex; gap: 32px; list-style: none;
+    }
+    .footer-links a {
+      font-size: 12px; letter-spacing: .1em;
+      text-transform: uppercase; color: var(--warm-gray);
+      transition: color .25s;
+    }
+    .footer-links a:hover { color: var(--charcoal); }
+    .footer-copy {
+      font-size: 11.5px; color: var(--border);
+      letter-spacing: .05em;
+    }
+
+    /* ─── Responsive ─────────────────────────────────────────────── */
+    @media (max-width: 900px) {
+      .hero { grid-template-columns: 1fr; padding-top: 40px; }
+      .hero-collage { height: 360px; margin-top: 30px; }
+      .services-grid { grid-template-columns: 1fr; }
+      .about-inner { grid-template-columns: 1fr; gap: 48px; }
+      .insta-grid { grid-template-rows: repeat(2, 160px); }
+      .nav-links { display: none; }
+    }
+  </style>
+</head>
+<body>
+
+  <!-- ── NAV ───────────────────────────────────────────────────────── -->
+  <nav>
+    <ul class="nav-links">
+      <li><a href="#about">About</a></li>
+      <li><a href="#services">Weddings</a></li>
+      <li><a href="#services">Events</a></li>
+      <li><a href="#cta">Contact</a></li>
+    </ul>
+    <div class="logo">
+      <span class="logo-diamond">◆</span> Descon
+    </div>
+    <a href="#cta" class="btn-talk">Let's talk</a>
+  </nav>
+
+  <!-- ── HERO ──────────────────────────────────────────────────────── -->
+  <section class="hero">
+    <div class="hero-text">
+      <h1 class="reveal d1">
+        Hi There<br>
+        This is<br>
+        <span>— Sanches</span><br>
+        Liza
+      </h1>
+      <p class="reveal d2">
+        Floral Designer, Wedding Planner, and Event Enthusiast who creates
+        memorable moments for special occasions.
+      </p>
+      <a href="#cta" class="btn-primary reveal d3">Get in touch</a>
+    </div>
+
+    <div class="hero-collage reveal d4">
+      <div class="img-a">
+        <img src="https://images.unsplash.com/photo-1519225421980-715cb0215aed?w=700&q=80" alt="Wedding bouquet" />
+      </div>
+      <div class="img-b">
+        <img src="https://images.unsplash.com/photo-1591604466107-ec97de577aff?w=500&q=80" alt="Wedding table" />
+      </div>
+      <div class="img-c">
+        <img src="https://images.unsplash.com/photo-1465495976277-4387d4b0b4c6?w=400&q=80" alt="Floral arrangement" />
+      </div>
+    </div>
+  </section>
+
+  <div class="divider">
+    <div class="divider-line"></div>
+    <span>My Services</span>
+    <div class="divider-line"></div>
+  </div>
+
+  <!-- ── SERVICES ──────────────────────────────────────────────────── -->
+  <section id="services">
+    <div class="services-header reveal d1">
+      <div class="section-label">MY SERVICES</div>
+      <h2 class="section-title">All you need is on me</h2>
+      <p class="section-sub">
+        I will take care of everything for you from event planning
+        and curation to design and production
+      </p>
+    </div>
+
+    <div class="services-grid">
+      <div class="service-card reveal d2">
+        <div class="service-card-img">
+          <img src="https://images.unsplash.com/photo-1487530811015-780780338c01?w=700&q=80" alt="Venue Dressing" />
+        </div>
+        <div class="service-card-label">
+          <h3>Venue Dressing</h3>
+          <a href="#" class="learn-more">Learn more</a>
+        </div>
+      </div>
+
+      <div class="service-card reveal d3">
+        <div class="service-card-img">
+          <img src="https://images.unsplash.com/photo-1511285560929-80b456fea0bc?w=700&q=80" alt="Bridal Styling" />
+        </div>
+        <div class="service-card-label">
+          <h3>Bridal Styling</h3>
+          <a href="#" class="learn-more">Learn more</a>
+        </div>
+      </div>
+
+      <div class="service-card reveal d4">
+        <div class="service-card-img">
+          <img src="https://images.unsplash.com/photo-1478146059778-26028b07395a?w=700&q=80" alt="Event Planning" />
+        </div>
+        <div class="service-card-label">
+          <h3>Event Planning</h3>
+          <a href="#" class="learn-more">Learn more</a>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ── ABOUT ─────────────────────────────────────────────────────── -->
+  <section id="about" style="background: var(--blush); padding: 90px 5vw;">
+    <div class="about-inner">
+      <div class="about-text reveal d1">
+        <p class="about-label">ABOUT US</p>
+        <h2>Interior design<br>that matters</h2>
+        <p>
+          We craft immersive environments that tell your story. Every petal,
+          every drape, every detail is chosen with intention to create a
+          setting that feels both timeless and wholly yours.
+        </p>
+        <div class="stats">
+          <div>
+            <div class="stat-num">1K+</div>
+            <div class="stat-label">Regular customers in every month</div>
+          </div>
+          <div>
+            <div class="stat-num">5+</div>
+            <div class="stat-label">Years of experience</div>
+          </div>
+        </div>
+      </div>
+
+      <div class="about-collage reveal d2">
+        <div class="ph1">
+          <img src="https://images.unsplash.com/photo-1606800052052-a08af7148866?w=900&q=80" alt="Wedding interior" />
+        </div>
+        <div class="ph2">
+          <img src="https://images.unsplash.com/photo-1470290449668-02dd93d9420a?w=500&q=80" alt="Floral decor" />
+        </div>
+        <div class="ph3">
+          <img src="https://images.unsplash.com/photo-1532712938310-34cb3982ef74?w=500&q=80" alt="Wedding ceremony" />
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ── INSTAGRAM ─────────────────────────────────────────────────── -->
+  <section class="instagram">
+    <h2 class="reveal d1">On instagram</h2>
+    <p class="handle reveal d2">Follow me @design.ofspace.com</p>
+
+    <div class="insta-grid">
+      <div class="insta-cell reveal d1">
+        <img src="https://images.unsplash.com/photo-1543253687-c931c8e01820?w=500&q=80" alt="Instagram 1" />
+        <div class="insta-overlay"><span>♥</span></div>
+      </div>
+      <div class="insta-cell reveal d2">
+        <img src="https://images.unsplash.com/photo-1550005809-91ad75fb315f?w=500&q=80" alt="Instagram 2" />
+        <div class="insta-overlay"><span>♥</span></div>
+      </div>
+      <div class="insta-cell reveal d3">
+        <img src="https://images.unsplash.com/photo-1482275548304-a58859dc31b7?w=500&q=80" alt="Instagram 3" />
+        <div class="insta-overlay"><span>♥</span></div>
+      </div>
+      <div class="insta-cell reveal d4">
+        <img src="https://images.unsplash.com/photo-1520854221256-17451cc331bf?w=500&q=80" alt="Instagram 4" />
+        <div class="insta-overlay"><span>♥</span></div>
+      </div>
+      <div class="insta-cell reveal d5">
+        <img src="https://images.unsplash.com/photo-1562157873-818bc0726f68?w=500&q=80" alt="Instagram 5" />
+        <div class="insta-overlay"><span>♥</span></div>
+      </div>
+      <div class="insta-cell reveal d6">
+        <img src="https://images.unsplash.com/photo-1519741497674-611481863552?w=500&q=80" alt="Instagram 6" />
+        <div class="insta-overlay"><span>♥</span></div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ── CTA ───────────────────────────────────────────────────────── -->
+  <section class="cta-section" id="cta">
+    <h2 class="reveal d1">Are you ready to plan<br>a special day</h2>
+    <p class="reveal d2">
+      We will take care of everything for you from event planning
+      and curation to design and production
+    </p>
+    <a href="mailto:hello@sanchesliza.com" class="btn-burg reveal d3">Let's talk</a>
+  </section>
+
+  <!-- ── FOOTER ─────────────────────────────────────────────────────── -->
+  <footer>
+    <div class="footer-logo">
+      <span class="logo-diamond">◆</span> Descon
+    </div>
+    <ul class="footer-links">
+      <li><a href="#">Home</a></li>
+      <li><a href="#about">About us</a></li>
+      <li><a href="#services">Menu</a></li>
+      <li><a href="#">Blog</a></li>
+      <li><a href="#cta">Contact us</a></li>
+    </ul>
+    <span class="footer-copy">© 2024 Sanches Liza. All rights reserved.</span>
+  </footer>
+
+  <!-- ── Scroll reveal ─────────────────────────────────────────────── -->
+  <script>
+    const observer = new IntersectionObserver(
+      (entries) => entries.forEach(e => {
+        if (e.isIntersecting) {
+          e.target.style.animationPlayState = 'running';
+          observer.unobserve(e.target);
+        }
+      }),
+      { threshold: 0.12 }
+    );
+    document.querySelectorAll('.reveal').forEach(el => {
+      el.style.animationPlayState = 'paused';
+      observer.observe(el);
+    });
+  </script>
+</body>
+</html>
