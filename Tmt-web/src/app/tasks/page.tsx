@@ -63,7 +63,7 @@ function TasksPageInner() {
   return (
     <AppLayout>
       {/* Header */}
-      <div className="flex items-center justify-between mb-8">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-8">
         <div>
           <h1 className="font-serif text-2xl font-semibold text-[#1C1A18]">Tasks</h1>
           <p className="text-sm text-[#8A8278] mt-0.5 font-light">
@@ -75,7 +75,7 @@ function TasksPageInner() {
 
       {/* Status summary pills */}
       {!loading && meta && meta.total > 0 && (
-        <div className="flex items-center gap-3 mb-6">
+        <div className="flex flex-wrap items-center gap-3 mb-6">
           <div className="bg-white border border-[#E8DDD4] rounded-lg px-4 py-2.5 flex items-center gap-2">
             <span className="text-xs text-[#8A8278]">To Do</span>
             <span className="font-semibold text-[#1C1A18] text-sm">{counts.todo}</span>

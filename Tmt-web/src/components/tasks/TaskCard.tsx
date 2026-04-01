@@ -28,7 +28,7 @@ export default function TaskCard({ task, onStatusChange, onDelete, onEdit }: Tas
       {/* Title + actions */}
       <div className="flex items-start justify-between gap-2 mb-2">
         <h4 className="font-medium text-[#1C1A18] text-sm leading-snug">{task.title}</h4>
-        <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-all duration-200">
+        <div className="flex items-center gap-1 opacity-100 md:opacity-0 md:group-hover:opacity-100 transition-all duration-200">
           <button
             onClick={() => onEdit(task)}
             className="flex-shrink-0 p-1 text-[#8A8278] hover:text-[#1C1A18] rounded"

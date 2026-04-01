@@ -22,7 +22,7 @@ export default function ProjectCard({ project, onDelete, onEdit, isAdmin }: Proj
           {project.name}
         </h3>
         {isAdmin && (
-          <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-all duration-200">
+          <div className="flex items-center gap-1 opacity-100 md:opacity-0 md:group-hover:opacity-100 transition-all duration-200">
             <button
               onClick={() => onEdit(project)}
               className="p-1 text-[#C4B8AD] hover:text-[#7D1F1F] rounded"

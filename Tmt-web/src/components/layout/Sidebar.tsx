@@ -41,7 +41,12 @@ const ADMIN_ITEMS = [
   },
 ];
 
-export default function Sidebar() {
+interface SidebarProps {
+  isOpen: boolean;
+  setIsOpen: (v: boolean) => void;
+}
+
+export default function Sidebar({ isOpen, setIsOpen }: SidebarProps) {
   const pathname  = usePathname();
   const { user, logout, isAdmin } = useAuth();
 
@@ -49,7 +54,16 @@ export default function Sidebar() {
     href === '/dashboard' ? pathname === '/dashboard' : pathname.startsWith(href);
 
   return (
-    <aside className="fixed inset-y-0 left-0 z-50 w-[240px] bg-white border-r border-[#E8DDD4] flex flex-col">
+    <>
+      {/* Mobile overlay backdrop */}
+      {isOpen && (
+        <div 
+          className="fixed inset-0 z-40 bg-black/50 md:hidden transition-opacity"
+          onClick={() => setIsOpen(false)}
+        />
+      )}
+      
+      <aside className={`fixed inset-y-0 left-0 z-50 w-[240px] bg-white border-r border-[#E8DDD4] flex flex-col transition-transform duration-300 ease-in-out md:translate-x-0 ${isOpen ? 'translate-x-0' : '-translate-x-full'}`}>
 
       {/* ── Logo ────────────────────────────────────────────── */}
       <div className="flex items-center gap-3 px-5 h-[60px] border-b border-[#E8DDD4] flex-shrink-0">
@@ -73,6 +87,7 @@ export default function Sidebar() {
           <Link
             key={item.href}
             href={item.href}
+            onClick={() => setIsOpen(false)}
             className={`flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm transition-all duration-150
               ${isActive(item.href)
                 ? 'bg-[#F5E6DC] text-[#7D1F1F] font-medium'
@@ -95,6 +110,7 @@ export default function Sidebar() {
               <Link
                 key={item.href}
                 href={item.href}
+                onClick={() => setIsOpen(false)}
                 className={`flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm transition-all duration-150
                   ${isActive(item.href)
                     ? 'bg-[#F5E6DC] text-[#7D1F1F] font-medium'
@@ -142,5 +158,6 @@ export default function Sidebar() {
         </div>
       )}
     </aside>
+    </>
   );
 }

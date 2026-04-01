@@ -112,8 +112,8 @@ export default function DashboardPage() {
     catch { toast.error('Failed to delete project'); }
   };
 
-  // ── Shared user checkbox list ────────────────────────────────────────────────
-  const UserCheckboxList = () => (
+  // ── Inline user checkbox list JSX (avoids stale-closure issues with nested components)
+  const userCheckboxListJsx = (
     <div className="flex flex-col gap-2">
       <label className="text-xs font-medium text-[#1C1A18] tracking-wide uppercase">Assign Users</label>
       <div className="max-h-40 overflow-auto rounded border border-[#E8DDD4] bg-white p-3">
@@ -142,10 +142,41 @@ export default function DashboardPage() {
     </div>
   );
 
+  const editUserCheckboxListJsx = (
+    <div className="flex flex-col gap-2">
+      <label className="text-xs font-medium text-[#1C1A18] tracking-wide uppercase">Assign Users</label>
+      <div className="max-h-40 overflow-auto rounded border border-[#E8DDD4] bg-white p-3 relative">
+        {loadingMembers ? (
+          <p className="text-xs text-[#8A8278] italic">Loading members…</p>
+        ) : users.length === 0 ? (
+          <p className="text-xs text-[#8A8278]">No users available</p>
+        ) : (
+          users.map((u) => (
+            <label key={u.id} className="flex items-center gap-2 py-1 text-sm text-[#1C1A18]">
+              <input
+                type="checkbox"
+                className="accent-[#7D1F1F]"
+                checked={!!form.memberIds?.includes(u.id)}
+                onChange={(e) => {
+                  const next = new Set(form.memberIds ?? []);
+                  if (e.target.checked) next.add(u.id); else next.delete(u.id);
+                  setForm({ ...form, memberIds: Array.from(next) });
+                }}
+              />
+              <span>{u.name}</span>
+              <span className="text-xs text-[#8A8278]">({u.email})</span>
+            </label>
+          ))
+        )}
+      </div>
+      <p className="text-xs text-[#8A8278]">Only assigned users can create tasks in this project.</p>
+    </div>
+  );
+
   return (
     <AppLayout>
       {/* Page header */}
-      <div className="flex items-center justify-between mb-8">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-8">
         <div>
           <h1 className="font-serif text-2xl font-semibold text-[#4B1414]">Projects</h1>
           <p className="text-sm text-[#8A8278] mt-0.5 font-light">
@@ -159,7 +190,7 @@ export default function DashboardPage() {
 
       {/* Search bar */}
       <div className="mb-6">
-        <div className="relative max-w-sm">
+        <div className="relative w-full sm:max-w-sm">
           <svg className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-[#8A8278] pointer-events-none" fill="none" viewBox="0 0 24 24" stroke="currentColor">
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-4.35-4.35M17 11A6 6 0 115 11a6 6 0 0112 0z" />
           </svg>
@@ -256,7 +287,7 @@ export default function DashboardPage() {
               value={form.name} onChange={(e) => setForm({ ...form, name: e.target.value })} />
             <Textarea label="Description" placeholder="What is this project about?"
               value={form.description ?? ''} onChange={(e) => setForm({ ...form, description: e.target.value })} />
-            <UserCheckboxList />
+            {userCheckboxListJsx}
             <div className="flex justify-end gap-2 pt-3 border-t border-[#C6A0A0]">
               <Button variant="secondary" type="button" onClick={() => setShowCreate(false)}>Cancel</Button>
               <Button type="submit" loading={saving}>Create Project</Button>
@@ -273,7 +304,7 @@ export default function DashboardPage() {
               value={form.name} onChange={(e) => setForm({ ...form, name: e.target.value })} />
             <Textarea label="Description" placeholder="What is this project about?"
               value={form.description ?? ''} onChange={(e) => setForm({ ...form, description: e.target.value })} />
-            <UserCheckboxList />
+            {editUserCheckboxListJsx}
             <div className="flex justify-end gap-2 pt-3 border-t border-[#C6A0A0]">
               <Button variant="secondary" type="button" onClick={() => { setShowEdit(false); setEditTarget(null); }}>Cancel</Button>
               <Button type="submit" loading={saving}>Save Changes</Button>

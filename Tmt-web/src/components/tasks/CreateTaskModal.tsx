@@ -5,6 +5,7 @@ import Modal from '@/components/ui/Modal';
 import Input, { Textarea, Select } from '@/components/ui/Input';
 import Button from '@/components/ui/Button';
 import type { Project, User, CreateTaskForm } from '@/types';
+import { useAuth } from '@/context/AuthContext';
 
 interface CreateTaskModalProps {
   isOpen:       boolean;
@@ -26,6 +27,7 @@ const EMPTY_FORM: CreateTaskForm = {
 export default function CreateTaskModal({
   isOpen, onClose, onSubmit, projects, users, defaultProjectId,
 }: CreateTaskModalProps) {
+  const { user } = useAuth();
   const [form,    setForm]    = useState<CreateTaskForm>({
     ...EMPTY_FORM,
     projectId: defaultProjectId ?? '',
@@ -34,11 +36,10 @@ export default function CreateTaskModal({
   const [loading, setLoading] = useState(false);
 
   const projectOptions = projects.map((p) => ({ value: p.id, label: p.name }));
-  const userOptions    = users.map((u)    => ({ value: u.id, label: u.name }));
 
   const validate = (): boolean => {
     const errs: Partial<CreateTaskForm> = {};
-    if (!form.title.trim())    errs.title     = 'Title is required';
+    if (!form.title.trim())     errs.title     = 'Title is required';
     if (!form.projectId.trim()) errs.projectId = 'Project is required';
     setErrors(errs);
     return Object.keys(errs).length === 0;
@@ -52,7 +53,7 @@ export default function CreateTaskModal({
       await onSubmit({
         ...form,
         assignedTo: form.assignedTo || undefined,
-        dueDate:    form.dueDate    ? new Date(form.dueDate).toISOString() : undefined,
+        dueDate:    form.dueDate ? new Date(form.dueDate).toISOString() : undefined,
       });
       setForm({ ...EMPTY_FORM, projectId: defaultProjectId ?? '' });
       setErrors({});
@@ -97,13 +98,13 @@ export default function CreateTaskModal({
           onChange={(e) => setForm({ ...form, projectId: e.target.value })}
         />
 
-        <Select
-          label="Assign to"
-          options={userOptions}
-          value={form.assignedTo ?? ''}
-          placeholder="Unassigned"
-          onChange={(e) => setForm({ ...form, assignedTo: e.target.value })}
-        />
+        <div className="flex flex-col gap-1.5">
+          <label className="text-xs font-medium text-[#1C1A18] tracking-wide uppercase">Assign to</label>
+          <div className="p-2.5 bg-[#F5E6DC]/30 border border-[#E8DDD4] rounded text-sm text-[#1C1A18] flex items-center gap-2">
+            <span className="font-medium">{user?.name}</span>
+            <span className="text-[#8A8278]">(Auto-assigned to you)</span>
+          </div>
+        </div>
 
         <Input
           label="Due date"

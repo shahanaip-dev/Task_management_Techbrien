@@ -18,16 +18,17 @@ class TaskService {
             if (!isMember)
                 throw new error_middleware_1.AppError(403, 'You are not a member of this project');
         }
-        if (input.assignedTo) {
-            const user = await this.userRepo.findById(input.assignedTo);
-            if (!user)
+        const finalAssignedTo = input.assignedTo || user?.id;
+        if (finalAssignedTo) {
+            const assigneeUser = await this.userRepo.findById(finalAssignedTo);
+            if (!assigneeUser)
                 throw new error_middleware_1.AppError(404, 'Assigned user not found');
         }
         return this.taskRepo.create({
             title: input.title,
             description: input.description,
             projectId: input.projectId,
-            assignedTo: input.assignedTo,
+            assignedTo: finalAssignedTo,
             dueDate: input.dueDate ? new Date(input.dueDate) : undefined,
         });
     }

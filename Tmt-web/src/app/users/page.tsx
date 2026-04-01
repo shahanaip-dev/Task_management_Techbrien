@@ -130,7 +130,7 @@ export default function UsersPage() {
   return (
     <AppLayout>
       {/* Header */}
-      <div className="flex items-center justify-between mb-8">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-8">
         <div>
           <h1 className="font-serif text-2xl font-semibold text-[#1C1A18]">Team</h1>
           <p className="text-sm text-[#8A8278] mt-0.5 font-light">
@@ -147,7 +147,8 @@ export default function UsersPage() {
 
       {/* Users table */}
       <div className="bg-white rounded-lg border border-[#E8DDD4] overflow-hidden">
-        <div className="grid grid-cols-12 gap-3 px-5 py-3 bg-[#FAF7F2] text-[11px] uppercase tracking-wider text-[#8A8278] font-semibold">
+        {/* Desktop table header - hidden on mobile */}
+        <div className="hidden md:grid grid-cols-12 gap-3 px-5 py-3 bg-[#FAF7F2] text-[11px] uppercase tracking-wider text-[#8A8278] font-semibold">
           <div className="col-span-3">Name</div>
           <div className="col-span-3">Email</div>
           <div className="col-span-2">Role</div>
@@ -165,23 +166,41 @@ export default function UsersPage() {
           <div className="p-10 text-center text-sm text-[#8A8278]">No users found</div>
         ) : (
           users.map((u) => (
-            <div key={u.id} className="grid grid-cols-12 gap-3 px-5 py-4 border-t border-[#E8DDD4] text-sm">
-              <div className="col-span-3 font-medium text-[#1C1A18]">{u.name}</div>
-              <div className="col-span-3 text-[#6B6860]">{u.email}</div>
-              <div className="col-span-2 text-[#6B6860]">{ROLE_LABELS[u.role] ?? u.role}</div>
-              <div className="col-span-2 text-[#6B6860]">
-                {formatDate((u as any).created_at ?? (u as any).createdAt)}
+            <div key={u.id} className="border-t border-[#E8DDD4] text-sm">
+              {/* Desktop row */}
+              <div className="hidden md:grid grid-cols-12 gap-3 px-5 py-4 items-center">
+                <div className="col-span-3 font-medium text-[#1C1A18]">{u.name}</div>
+                <div className="col-span-3 text-[#6B6860] truncate">{u.email}</div>
+                <div className="col-span-2 text-[#6B6860]">{ROLE_LABELS[u.role] ?? u.role}</div>
+                <div className="col-span-2 text-[#6B6860]">
+                  {formatDate((u as any).created_at ?? (u as any).createdAt)}
+                </div>
+                <div className="col-span-2 flex justify-end gap-2">
+                  <Button size="sm" variant="secondary" onClick={() => openEdit(u)}>Edit</Button>
+                  <Button size="sm" variant="danger" disabled={isSelf(u) || isSystemAdmin(u)} onClick={() => handleDelete(u)}>Delete</Button>
+                </div>
               </div>
-              <div className="col-span-2 flex justify-end gap-2">
-                <Button size="sm" variant="secondary" onClick={() => openEdit(u)}>Edit</Button>
-                <Button
-                  size="sm"
-                  variant="danger"
-                  disabled={isSelf(u) || isSystemAdmin(u)}
-                  onClick={() => handleDelete(u)}
-                >
-                  Delete
-                </Button>
+              {/* Mobile card */}
+              <div className="md:hidden px-4 py-4">
+                <div className="flex items-center gap-3 mb-3">
+                  <div className="w-9 h-9 rounded-full bg-[#F5E6DC] flex items-center justify-center text-[#7D1F1F] text-sm font-semibold flex-shrink-0">
+                    {u.name.charAt(0).toUpperCase()}
+                  </div>
+                  <div className="flex-1 min-w-0">
+                    <p className="font-medium text-[#1C1A18] truncate">{u.name}</p>
+                    <p className="text-xs text-[#6B6860] truncate">{u.email}</p>
+                  </div>
+                </div>
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-3 text-xs text-[#8A8278]">
+                    <span className="inline-block px-2 py-0.5 bg-[#FAF7F2] rounded text-[10px] font-semibold uppercase tracking-wider">{ROLE_LABELS[u.role] ?? u.role}</span>
+                    <span>{formatDate((u as any).created_at ?? (u as any).createdAt)}</span>
+                  </div>
+                  <div className="flex gap-2">
+                    <Button size="sm" variant="secondary" onClick={() => openEdit(u)}>Edit</Button>
+                    <Button size="sm" variant="danger" disabled={isSelf(u) || isSystemAdmin(u)} onClick={() => handleDelete(u)}>Delete</Button>
+                  </div>
+                </div>
               </div>
             </div>
           ))
