@@ -62,7 +62,7 @@ export class TaskService {
   async getTask(id: string, user?: { id: string; role: string }) {
     const task = await this.taskRepo.findByIdWithRelations(id);
     if (!task) throw new AppError(404, 'Task not found');
-    if (user?.role === 'EMPLOYEE' && task.assigned_to !== user.id) {
+    if (user?.role === 'EMPLOYEE' && task.assignedTo !== user.id) {
       throw new AppError(403, 'You do not have access to this task');
     }
     return task;
