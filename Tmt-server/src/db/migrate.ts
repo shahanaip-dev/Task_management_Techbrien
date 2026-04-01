@@ -1,6 +1,5 @@
 /**
- * Migration runner
- * Reads schema.sql and executes it against the configured database.
+ * Migration runner — idempotent, splits statements individually.
  * Run: npm run db:migrate
  */
 import fs from 'fs';
@@ -13,20 +12,34 @@ async function migrate() {
   const schemaPath = path.join(__dirname, 'schema.sql');
   const sql = fs.readFileSync(schemaPath, 'utf-8');
 
-  try {
-    await db.query(sql);
-    console.log('✅ Migration successful — all tables created\n');
-  } catch (err: any) {
-    // Ignore "already exists" errors so re-runs are safe
-    if (err.code === '42710' || err.code === '42P07') {
-      console.log('ℹ️  Schema already exists — nothing to do\n');
-    } else {
-      console.error('❌ Migration failed:', err.message);
-      process.exit(1);
+  // Split on semicolons (skip empty chunks) and run each statement individually
+  const statements = sql
+    .split(';')
+    .map((s) => s.trim())
+    .filter((s) => s.length > 0);
+
+  let errors = 0;
+  for (const stmt of statements) {
+    try {
+      await db.query(stmt);
+    } catch (err: any) {
+      // 42710 = duplicate_object (enum), 42P07 = duplicate_table, 42701 = duplicate_column
+      if (['42710', '42P07', '42701'].includes(err.code)) {
+        // silently skip — already exists
+      } else {
+        console.error('❌ Statement failed:', err.message, '\n  SQL:', stmt.substring(0, 80));
+        errors++;
+      }
     }
-  } finally {
-    await db.end();
   }
+
+  if (errors === 0) {
+    console.log('✅ Migration complete — all statements applied\n');
+  } else {
+    console.log(`⚠️  Migration finished with ${errors} error(s)\n`);
+  }
+
+  await db.end();
 }
 
 migrate();

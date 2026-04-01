@@ -18,11 +18,13 @@ export class ProjectService {
 
   async listProjects(query: Record<string, unknown>, user: JwtUser) {
     const pagination = parsePagination(query);
+    const name = typeof query.name === 'string' && query.name.trim() ? query.name.trim() : undefined;
+
     if (user.role === 'ADMIN') {
-      const [projects, total] = await this.projectRepo.findMany(pagination);
+      const [projects, total] = await this.projectRepo.findMany(pagination, name);
       return buildPaginated(projects, total, pagination);
     }
-    const [projects, total] = await this.projectRepo.findManyForUser(user.id, pagination);
+    const [projects, total] = await this.projectRepo.findManyForUser(user.id, pagination, name);
     return buildPaginated(projects, total, pagination);
   }
 

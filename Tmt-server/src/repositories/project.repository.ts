@@ -101,7 +101,12 @@ export class ProjectRepository {
     await this.db.query(`DELETE FROM projects WHERE id = $1`, [id]);
   }
 
-  async findMany({ limit, offset }: PaginationParams): Promise<[Project[], number]> {
+  async findMany({ limit, offset }: PaginationParams, name?: string): Promise<[Project[], number]> {
+    const nameFilter = name ? `WHERE p.name ILIKE $3` : '';
+    const countFilter = name ? `WHERE name ILIKE $1` : '';
+    const params      = name ? [limit, offset, `%${name}%`] : [limit, offset];
+    const countParams = name ? [`%${name}%`] : [];
+
     const [dataRes, countRes] = await Promise.all([
       this.db.query(
         `SELECT
@@ -112,11 +117,12 @@ export class ProjectRepository {
            (SELECT COUNT(*) FROM tasks t WHERE t.project_id = p.id)::int AS task_count
          FROM projects p
          JOIN users u ON u.id = p.created_by
+         ${nameFilter}
          ORDER BY p.created_at DESC
          LIMIT $1 OFFSET $2`,
-        [limit, offset]
+        params
       ),
-      this.db.query<{ count: string }>(`SELECT COUNT(*) FROM projects`),
+      this.db.query<{ count: string }>(`SELECT COUNT(*) FROM projects ${countFilter}`, countParams),
     ]);
 
     const projects: Project[] = dataRes.rows.map((row) => ({
@@ -136,7 +142,12 @@ export class ProjectRepository {
     return [projects, parseInt(countRes.rows[0].count, 10)];
   }
 
-  async findManyForUser(userId: string, { limit, offset }: PaginationParams): Promise<[Project[], number]> {
+  async findManyForUser(userId: string, { limit, offset }: PaginationParams, name?: string): Promise<[Project[], number]> {
+    const nameFilter  = name ? `AND p.name ILIKE $4` : '';
+    const countFilter = name ? `AND p.name ILIKE $2` : '';
+    const params      = name ? [limit, offset, userId, `%${name}%`] : [limit, offset, userId];
+    const countParams = name ? [userId, `%${name}%`] : [userId];
+
     const [dataRes, countRes] = await Promise.all([
       this.db.query(
         `SELECT
@@ -149,16 +160,18 @@ export class ProjectRepository {
          FROM projects p
          JOIN users u ON u.id = p.created_by
          JOIN project_members pm ON pm.project_id = p.id AND pm.user_id = $3
+         ${nameFilter}
          GROUP BY p.id, u.id
          ORDER BY p.created_at DESC
          LIMIT $1 OFFSET $2`,
-        [limit, offset, userId]
+        params
       ),
       this.db.query<{ count: string }>(
         `SELECT COUNT(DISTINCT p.id)
          FROM projects p
-         JOIN project_members pm ON pm.project_id = p.id AND pm.user_id = $1`,
-        [userId]
+         JOIN project_members pm ON pm.project_id = p.id AND pm.user_id = $1
+         ${countFilter}`,
+        countParams
       ),
     ]);
 

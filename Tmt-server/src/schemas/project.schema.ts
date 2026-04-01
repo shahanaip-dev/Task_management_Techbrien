@@ -9,7 +9,8 @@ export const CreateProjectSchema = z.object({
 export const UpdateProjectSchema = z.object({
   name:        z.string().min(2).max(200).optional(),
   description: z.string().max(1000).optional(),
-}).refine((d) => d.name !== undefined || d.description !== undefined, {
+  memberIds:   z.array(z.string().uuid('Invalid user ID')).optional(),
+}).refine((d) => d.name !== undefined || d.description !== undefined || d.memberIds !== undefined, {
   message: 'At least one field must be provided',
 });
 

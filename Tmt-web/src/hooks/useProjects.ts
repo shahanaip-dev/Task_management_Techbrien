@@ -10,12 +10,17 @@ export function useProjects(initialLimit = 10) {
   const [loading,  setLoading]  = useState(false);
   const [error,    setError]    = useState<string | null>(null);
   const [offset,   setOffset]   = useState(0);
+  const [search,   setSearch]   = useState('');
 
   const fetchProjects = useCallback(async () => {
     setLoading(true);
     setError(null);
     try {
-      const res = await projectsApi.list({ limit: initialLimit, offset });
+      const res = await projectsApi.list({
+        limit: initialLimit,
+        offset,
+        ...(search.trim() ? { name: search.trim() } : {}),
+      });
       setProjects(res.data.data.data);
       setMeta(res.data.data.meta);
     } catch (err: any) {
@@ -23,12 +28,24 @@ export function useProjects(initialLimit = 10) {
     } finally {
       setLoading(false);
     }
-  }, [offset, initialLimit]);
+  }, [offset, initialLimit, search]);
 
   useEffect(() => { fetchProjects(); }, [fetchProjects]);
 
+  // Reset to page 1 when search changes
+  const handleSearch = useCallback((value: string) => {
+    setSearch(value);
+    setOffset(0);
+  }, []);
+
   const createProject = useCallback(async (data: CreateProjectForm) => {
     const res = await projectsApi.create(data);
+    await fetchProjects();
+    return res.data.data;
+  }, [fetchProjects]);
+
+  const updateProject = useCallback(async (id: string, data: Partial<CreateProjectForm>) => {
+    const res = await projectsApi.update(id, data);
     await fetchProjects();
     return res.data.data;
   }, [fetchProjects]);
@@ -41,7 +58,8 @@ export function useProjects(initialLimit = 10) {
   return {
     projects, meta, loading, error,
     offset, setOffset,
-    createProject, deleteProject,
+    search, setSearch: handleSearch,
+    createProject, updateProject, deleteProject,
     refresh: fetchProjects,
   };
 }

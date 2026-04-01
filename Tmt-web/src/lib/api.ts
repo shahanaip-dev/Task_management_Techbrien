@@ -70,7 +70,7 @@ export const usersApi = {
 
 // Projects
 export const projectsApi = {
-  list: (params?: { limit?: number; offset?: number }) =>
+  list: (params?: { limit?: number; offset?: number; name?: string }) =>
     apiClient.get<{ data: PaginatedData<Project> }>('/projects', { params }),
   getOne: (id: string) =>
     apiClient.get<{ data: Project }>(`/projects/${id}`),
