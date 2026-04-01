@@ -9,7 +9,7 @@ import Input, { Textarea } from '@/components/ui/Input';
 import Button from '@/components/ui/Button';
 import { useAuth } from '@/context/AuthContext';
 import { useProjects } from '@/hooks/useProjects';
-import { usersApi } from '@/lib/api';
+import { usersApi, projectsApi } from '@/lib/api';
 import type { CreateProjectForm, Project, User } from '@/types';
 
 const EMPTY_FORM: CreateProjectForm = { name: '', description: '', memberIds: [] };
@@ -24,8 +24,9 @@ export default function DashboardPage() {
   const [showEdit,   setShowEdit]     = useState(false);
   const [editTarget, setEditTarget]   = useState<Project | null>(null);
   const [form,       setForm]         = useState<CreateProjectForm>(EMPTY_FORM);
-  const [saving,     setSaving]       = useState(false);
-  const [users,      setUsers]        = useState<User[]>([]);
+  const [saving,        setSaving]       = useState(false);
+  const [users,         setUsers]        = useState<User[]>([]);
+  const [loadingMembers, setLoadingMembers] = useState(false);
 
   // Debounced search
   const handleSearchInput = (value: string) => {
@@ -62,12 +63,26 @@ export default function DashboardPage() {
   };
 
   // ── Edit ────────────────────────────────────────────────────────────────────
-  const openEdit = (project: Project) => {
+  const openEdit = async (project: Project) => {
     setEditTarget(project);
-    // Prefer snake_case from backend API response; fall back to camelCase
-    const currentMembers = project.member_ids ?? project.memberIds ?? [];
-    setForm({ name: project.name, description: project.description ?? '', memberIds: currentMembers });
+    // Start with name/description immediately; members load from fresh API call
+    setForm({ name: project.name, description: project.description ?? '', memberIds: [] });
     setShowEdit(true);
+    setLoadingMembers(true);
+    try {
+      const res = await projectsApi.getOne(project.id);
+      const projectDetail = res.data.data;
+      // Backend returns member_ids (snake_case)
+      const currentMembers: string[] =
+        (projectDetail as any).member_ids ?? projectDetail.memberIds ?? [];
+      setForm((prev) => ({ ...prev, memberIds: currentMembers }));
+    } catch {
+      // If fetch fails, fall back to what we already have in the list
+      const fallback = (project as any).member_ids ?? project.memberIds ?? [];
+      setForm((prev) => ({ ...prev, memberIds: fallback }));
+    } finally {
+      setLoadingMembers(false);
+    }
   };
 
   const handleEdit = async (e: React.FormEvent) => {
