@@ -37,7 +37,7 @@ export default function EditTaskModal({ isOpen, onClose, onSubmit, task, users }
     setErrors({});
   }, [task, isOpen]);
 
-  const userOptions = users.map((u) => ({ value: u.id, label: u.name }));
+  const employeeOptions = users.filter(u => u.role === 'EMPLOYEE').map((u) => ({ value: u.id, label: u.name }));
 
   const validate = (): boolean => {
     const errs: UpdateTaskForm = {};
@@ -85,7 +85,7 @@ export default function EditTaskModal({ isOpen, onClose, onSubmit, task, users }
 
         <Select
           label="Assign to"
-          options={userOptions}
+          options={employeeOptions}
           value={form.assignedTo ?? ''}
           placeholder="Unassigned"
           onChange={(e) => setForm({ ...form, assignedTo: e.target.value })}

@@ -98,13 +98,23 @@ export default function CreateTaskModal({
           onChange={(e) => setForm({ ...form, projectId: e.target.value })}
         />
 
-        <div className="flex flex-col gap-1.5">
-          <label className="text-xs font-medium text-[#1C1A18] tracking-wide uppercase">Assign to</label>
-          <div className="p-2.5 bg-[#F5E6DC]/30 border border-[#E8DDD4] rounded text-sm text-[#1C1A18] flex items-center gap-2">
-            <span className="font-medium">{user?.name}</span>
-            <span className="text-[#8A8278]">(Auto-assigned to you)</span>
+        {user?.role === 'ADMIN' ? (
+          <Select
+            label="Assign to"
+            options={users.filter(u => u.role === 'EMPLOYEE').map((u) => ({ value: u.id, label: u.name }))}
+            value={form.assignedTo ?? ''}
+            placeholder="Select an employee"
+            onChange={(e) => setForm({ ...form, assignedTo: e.target.value })}
+          />
+        ) : (
+          <div className="flex flex-col gap-1.5">
+            <label className="text-xs font-medium text-[#1C1A18] tracking-wide uppercase">Assign to</label>
+            <div className="p-2.5 bg-[#F5E6DC]/30 border border-[#E8DDD4] rounded text-sm text-[#1C1A18] flex items-center gap-2">
+              <span className="font-medium">{user?.name}</span>
+              <span className="text-[#8A8278]">(Auto-assigned to you)</span>
+            </div>
           </div>
-        </div>
+        )}
 
         <Input
           label="Due date"

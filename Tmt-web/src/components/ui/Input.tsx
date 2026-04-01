@@ -20,16 +20,6 @@ export default function Input({ label, error, hint, leftIcon, rightIcon, id, cla
         </label>
       )}
       <div className="relative">
-        {leftIcon && (
-          <span className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-[#8A8278]">
-            {leftIcon}
-          </span>
-        )}
-        {rightIcon && (
-          <span className="absolute right-3 top-1/2 -translate-y-1/2 text-[#8A8278]">
-            {rightIcon}
-          </span>
-        )}
         <input
           id={inputId}
           className={clsx(
@@ -44,6 +34,16 @@ export default function Input({ label, error, hint, leftIcon, rightIcon, id, cla
           )}
           {...props}
         />
+        {leftIcon && (
+          <span className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-[#8A8278]">
+            {leftIcon}
+          </span>
+        )}
+        {rightIcon && (
+          <span className="absolute right-3 top-1/2 -translate-y-1/2 text-[#8A8278] z-10 flex items-center justify-center">
+            {rightIcon}
+          </span>
+        )}
       </div>
       {error && <p className="text-xs text-red-600">{error}</p>}
       {hint && !error && <p className="text-xs text-[#8A8278]">{hint}</p>}
