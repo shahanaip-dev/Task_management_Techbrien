@@ -24,25 +24,25 @@ export interface JwtPayload {
   exp?:  number;
 }
 
-// ── Domain models (mirror DB columns) ─────────────────────────────────────
+// ── Domain models (mirror DB columns, mapped to camelCase in repositories) ──
 export interface User {
   id:         string;
   name:       string;
   email:      string;
   password?:  string;   // excluded in most responses
   role:       Role;
-  created_at: Date;
+  createdAt:  Date;
 }
 
 export interface Project {
   id:          string;
   name:        string;
   description: string | null;
-  created_by:  string;
-  created_at:  Date;
+  createdBy:   string;
+  createdAt:   Date;
   creator?:    Pick<User, 'id' | 'name' | 'email'>;
-  task_count?: number;
-  member_ids?: string[];
+  taskCount?:  number;
+  memberIds?:  string[];
 }
 
 export interface Task {
@@ -50,10 +50,10 @@ export interface Task {
   title:       string;
   description: string | null;
   status:      TaskStatus;
-  project_id:  string;
-  assigned_to: string | null;
-  due_date:    Date | null;
-  created_at:  Date;
+  projectId:   string;
+  assignedTo:  string | null;
+  dueDate:     Date | null;
+  createdAt:   Date;
   project?:    Pick<Project, 'id' | 'name'>;
   assignee?:   Pick<User, 'id' | 'name' | 'email'> | null;
 }

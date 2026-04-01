@@ -8,8 +8,7 @@ export interface User {
   name:      string;
   email:     string;
   role:      Role;
-  createdAt?: string;
-  created_at?: string;
+  createdAt: string;
 }
 
 export interface Project {
@@ -19,9 +18,8 @@ export interface Project {
   createdBy:   string;
   createdAt:   string;
   creator?:    Pick<User, 'id' | 'name' | 'email'>;
-  _count?:     { tasks: number };
+  taskCount?:  number;
   memberIds?:  string[];
-  member_ids?: string[];  // snake_case from backend
 }
 
 export interface Task {
@@ -78,6 +76,13 @@ export interface CreateTaskForm {
   projectId:   string;
   assignedTo?: string;
   dueDate?:    string;
+}
+export interface UpdateTaskForm {
+  title?:       string;
+  description?: string;
+  status?:      TaskStatus;
+  assignedTo?:  string | null;
+  dueDate?:     string | null;
 }
 export interface TaskFilters {
   projectId?:  string;

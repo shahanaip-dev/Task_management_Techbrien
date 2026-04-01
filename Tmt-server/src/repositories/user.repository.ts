@@ -2,14 +2,14 @@ import { Pool } from 'pg';
 import { User, Role, PaginationParams } from '../types';
 
 // Never return password in list/create responses
-const PUBLIC_COLS = 'id, name, email, role, created_at';
+const PUBLIC_COLS = 'id, name, email, role, created_at AS "createdAt"';
 
 export class UserRepository {
   constructor(private readonly db: Pool) {}
 
   async findById(id: string): Promise<User | null> {
     const { rows } = await this.db.query<User>(
-      `SELECT id, name, email, password, role, created_at FROM users WHERE id = $1`,
+      `SELECT id, name, email, password, role, created_at AS "createdAt" FROM users WHERE id = $1`,
       [id]
     );
     return rows[0] ?? null;
@@ -25,7 +25,7 @@ export class UserRepository {
 
   async findByEmail(email: string): Promise<User | null> {
     const { rows } = await this.db.query<User>(
-      `SELECT id, name, email, password, role, created_at FROM users WHERE email = $1`,
+      `SELECT id, name, email, password, role, created_at AS "createdAt" FROM users WHERE email = $1`,
       [email.toLowerCase().trim()]
     );
     return rows[0] ?? null;

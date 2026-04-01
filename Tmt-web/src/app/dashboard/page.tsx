@@ -72,13 +72,12 @@ export default function DashboardPage() {
     try {
       const res = await projectsApi.getOne(project.id);
       const projectDetail = res.data.data;
-      // Backend returns member_ids (snake_case)
-      const currentMembers: string[] =
-        (projectDetail as any).member_ids ?? projectDetail.memberIds ?? [];
+
+      const currentMembers: string[] = projectDetail.memberIds ?? [];
       setForm((prev) => ({ ...prev, memberIds: currentMembers }));
     } catch {
       // If fetch fails, fall back to what we already have in the list
-      const fallback = (project as any).member_ids ?? project.memberIds ?? [];
+      const fallback = project.memberIds ?? [];
       setForm((prev) => ({ ...prev, memberIds: fallback }));
     } finally {
       setLoadingMembers(false);
@@ -225,7 +224,7 @@ export default function DashboardPage() {
           {[
             { label: 'Total Projects', value: meta.total },
             { label: 'Active Projects', value: projects.length },
-            { label: 'Total Tasks',    value: projects.reduce((s, p) => s + (p._count?.tasks ?? 0), 0) },
+            { label: 'Total Tasks',    value: projects.reduce((s, p) => s + (p.taskCount ?? 0), 0) },
           ].map((stat) => (
             <div key={stat.label} className="bg-[#F1E7E7] rounded-lg border border-[#C6A0A0] px-5 py-4">
               <p className="text-xs text-[#5B2F2F] uppercase tracking-wide font-medium">{stat.label}</p>

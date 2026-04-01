@@ -173,7 +173,7 @@ export default function UsersPage() {
                 <div className="col-span-3 text-[#6B6860] truncate">{u.email}</div>
                 <div className="col-span-2 text-[#6B6860]">{ROLE_LABELS[u.role] ?? u.role}</div>
                 <div className="col-span-2 text-[#6B6860]">
-                  {formatDate((u as any).created_at ?? (u as any).createdAt)}
+                  {formatDate(u.createdAt)}
                 </div>
                 <div className="col-span-2 flex justify-end gap-2">
                   <Button size="sm" variant="secondary" onClick={() => openEdit(u)}>Edit</Button>
@@ -194,7 +194,7 @@ export default function UsersPage() {
                 <div className="flex items-center justify-between">
                   <div className="flex items-center gap-3 text-xs text-[#8A8278]">
                     <span className="inline-block px-2 py-0.5 bg-[#FAF7F2] rounded text-[10px] font-semibold uppercase tracking-wider">{ROLE_LABELS[u.role] ?? u.role}</span>
-                    <span>{formatDate((u as any).created_at ?? (u as any).createdAt)}</span>
+                    <span>{formatDate(u.createdAt)}</span>
                   </div>
                   <div className="flex gap-2">
                     <Button size="sm" variant="secondary" onClick={() => openEdit(u)}>Edit</Button>

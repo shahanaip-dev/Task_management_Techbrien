@@ -5,8 +5,8 @@ export class TaskRepository {
   constructor(private readonly db: Pool) {}
 
   async findById(id: string): Promise<Task | null> {
-    const { rows } = await this.db.query<Task>(
-      `SELECT id, title, description, status, project_id, assigned_to, due_date, created_at
+    const { rows } = await this.db.query<any>(
+      `SELECT id, title, description, status, project_id AS "projectId", assigned_to AS "assignedTo", due_date AS "dueDate", created_at AS "createdAt"
        FROM tasks WHERE id = $1`,
       [id]
     );
@@ -40,10 +40,10 @@ export class TaskRepository {
     assignedTo?:  string;
     dueDate?:     Date;
   }): Promise<Task> {
-    const { rows } = await this.db.query<Task>(
+    const { rows } = await this.db.query<any>(
       `INSERT INTO tasks (title, description, project_id, assigned_to, due_date)
        VALUES ($1, $2, $3, $4, $5)
-       RETURNING id, title, description, status, project_id, assigned_to, due_date, created_at`,
+       RETURNING id, title, description, status, project_id AS "projectId", assigned_to AS "assignedTo", due_date AS "dueDate", created_at AS "createdAt"`,
       [
         data.title,
         data.description ?? null,
@@ -77,9 +77,9 @@ export class TaskRepository {
 
     values.push(id);
 
-    const { rows } = await this.db.query<Task>(
+    const { rows } = await this.db.query<any>(
       `UPDATE tasks SET ${fields.join(', ')} WHERE id = $${idx}
-       RETURNING id, title, description, status, project_id, assigned_to, due_date, created_at`,
+       RETURNING id, title, description, status, project_id AS "projectId", assigned_to AS "assignedTo", due_date AS "dueDate", created_at AS "createdAt"`,
       values
     );
     return rows[0];
@@ -143,10 +143,10 @@ export class TaskRepository {
       title:       row.title,
       description: row.description,
       status:      row.status,
-      project_id:  row.project_id,
-      assigned_to: row.assigned_to,
-      due_date:    row.due_date,
-      created_at:  row.created_at,
+      projectId:   row.project_id,
+      assignedTo:  row.assigned_to,
+      dueDate:     row.due_date,
+      createdAt:   row.created_at,
       project: { id: row.proj_id, name: row.proj_name },
       assignee: row.assignee_id
         ? { id: row.assignee_id, name: row.assignee_name, email: row.assignee_email }

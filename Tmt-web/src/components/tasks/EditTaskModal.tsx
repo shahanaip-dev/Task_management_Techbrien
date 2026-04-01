@@ -4,17 +4,17 @@ import { useEffect, useState } from 'react';
 import Modal from '@/components/ui/Modal';
 import Input, { Textarea, Select } from '@/components/ui/Input';
 import Button from '@/components/ui/Button';
-import type { Task, User, CreateTaskForm } from '@/types';
+import type { Task, User, UpdateTaskForm } from '@/types';
 
 interface EditTaskModalProps {
   isOpen:  boolean;
   onClose: () => void;
-  onSubmit: (id: string, data: Partial<CreateTaskForm> & { dueDate?: string | null; assignedTo?: string | null }) => Promise<void>;
+  onSubmit: (id: string, data: UpdateTaskForm) => Promise<void>;
   task:    Task | null;
   users:   User[];
 }
 
-const EMPTY_FORM: Partial<CreateTaskForm> = {
+const EMPTY_FORM: UpdateTaskForm = {
   title:       '',
   description: '',
   assignedTo:  '',
@@ -22,8 +22,8 @@ const EMPTY_FORM: Partial<CreateTaskForm> = {
 };
 
 export default function EditTaskModal({ isOpen, onClose, onSubmit, task, users }: EditTaskModalProps) {
-  const [form,    setForm]    = useState<Partial<CreateTaskForm>>(EMPTY_FORM);
-  const [errors,  setErrors]  = useState<Partial<CreateTaskForm>>({});
+  const [form,    setForm]    = useState<UpdateTaskForm>(EMPTY_FORM);
+  const [errors,  setErrors]  = useState<UpdateTaskForm>({});
   const [loading, setLoading] = useState(false);
 
   useEffect(() => {
@@ -40,7 +40,7 @@ export default function EditTaskModal({ isOpen, onClose, onSubmit, task, users }
   const userOptions = users.map((u) => ({ value: u.id, label: u.name }));
 
   const validate = (): boolean => {
-    const errs: Partial<CreateTaskForm> = {};
+    const errs: UpdateTaskForm = {};
     if (!form.title?.trim()) errs.title = 'Title is required';
     setErrors(errs);
     return Object.keys(errs).length === 0;

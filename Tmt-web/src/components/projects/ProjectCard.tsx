@@ -12,7 +12,7 @@ interface ProjectCardProps {
 }
 
 export default function ProjectCard({ project, onDelete, onEdit, isAdmin }: ProjectCardProps) {
-  const taskCount = project._count?.tasks ?? 0;
+  const taskCount = project.taskCount ?? 0;
 
   return (
     <div className="bg-white rounded-lg border border-[#E8DDD4] p-6 hover:shadow-md hover:border-[#C4B8AD] transition-all duration-200 group">

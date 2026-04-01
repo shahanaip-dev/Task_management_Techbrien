@@ -5,8 +5,8 @@ export class ProjectRepository {
   constructor(private readonly db: Pool) {}
 
   async findById(id: string): Promise<Project | null> {
-    const { rows } = await this.db.query<Project>(
-      `SELECT id, name, description, created_by, created_at FROM projects WHERE id = $1`,
+    const { rows } = await this.db.query<any>(
+      `SELECT id, name, description, created_by AS "createdBy", created_at AS "createdAt" FROM projects WHERE id = $1`,
       [id]
     );
     return rows[0] ?? null;
@@ -33,9 +33,9 @@ export class ProjectRepository {
       id:          row.id,
       name:        row.name,
       description: row.description,
-      created_by:  row.created_by,
-      created_at:  row.created_at,
-      member_ids:  row.member_ids ?? [],
+      createdBy:   row.created_by,
+      createdAt:   row.created_at,
+      memberIds:   row.member_ids ?? [],
       creator: {
         id:    row.creator_id,
         name:  row.creator_name,
@@ -53,10 +53,10 @@ export class ProjectRepository {
     const client = await this.db.connect();
     try {
       await client.query('BEGIN');
-      const { rows } = await client.query<Project>(
+      const { rows } = await client.query<any>(
         `INSERT INTO projects (name, description, created_by)
          VALUES ($1, $2, $3)
-         RETURNING id, name, description, created_by, created_at`,
+         RETURNING id, name, description, created_by AS "createdBy", created_at AS "createdAt"`,
         [data.name, data.description ?? null, data.createdBy]
       );
       const project = rows[0];
@@ -97,15 +97,15 @@ export class ProjectRepository {
       let project: Project;
       if (fields.length > 0) {
         values.push(id);
-        const { rows } = await client.query<Project>(
+        const { rows } = await client.query<any>(
           `UPDATE projects SET ${fields.join(', ')} WHERE id = $${idx}
-           RETURNING id, name, description, created_by, created_at`,
+           RETURNING id, name, description, created_by AS "createdBy", created_at AS "createdAt"`,
           values
         );
         project = rows[0];
       } else {
-        const { rows } = await client.query<Project>(
-          `SELECT id, name, description, created_by, created_at FROM projects WHERE id = $1`,
+        const { rows } = await client.query<any>(
+          `SELECT id, name, description, created_by AS "createdBy", created_at AS "createdAt" FROM projects WHERE id = $1`,
           [id]
         );
         project = rows[0];
@@ -176,10 +176,10 @@ export class ProjectRepository {
       id:          row.id,
       name:        row.name,
       description: row.description,
-      created_by:  row.created_by,
-      created_at:  row.created_at,
-      task_count:  row.task_count,
-      member_ids:  row.member_ids ?? [],
+      createdBy:   row.created_by,
+      createdAt:   row.created_at,
+      taskCount:   row.task_count,
+      memberIds:   row.member_ids ?? [],
       creator: {
         id:    row.creator_id,
         name:  row.creator_name,
@@ -230,10 +230,10 @@ export class ProjectRepository {
       id:          row.id,
       name:        row.name,
       description: row.description,
-      created_by:  row.created_by,
-      created_at:  row.created_at,
-      task_count:  row.task_count,
-      member_ids:  row.member_ids ?? [],
+      createdBy:   row.created_by,
+      createdAt:   row.created_at,
+      taskCount:   row.task_count,
+      memberIds:   row.member_ids ?? [],
       creator: {
         id:    row.creator_id,
         name:  row.creator_name,
@@ -269,10 +269,10 @@ export class ProjectRepository {
       id:          row.id,
       name:        row.name,
       description: row.description,
-      created_by:  row.created_by,
-      created_at:  row.created_at,
-      task_count:  row.task_count,
-      member_ids:  row.member_ids ?? [],
+      createdBy:   row.created_by,
+      createdAt:   row.created_at,
+      taskCount:   row.task_count,
+      memberIds:   row.member_ids ?? [],
       creator: {
         id:    row.creator_id,
         name:  row.creator_name,
