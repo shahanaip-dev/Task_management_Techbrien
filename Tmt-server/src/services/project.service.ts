@@ -39,7 +39,11 @@ export class ProjectService {
   async updateProject(id: string, input: UpdateProjectInput) {
     const project = await this.projectRepo.findById(id);
     if (!project) throw new AppError(404, 'Project not found');
-    return this.projectRepo.update(id, input);
+    return this.projectRepo.update(id, {
+      name:        input.name,
+      description: input.description,
+      memberIds:   input.memberIds,
+    });
   }
 
   async deleteProject(id: string) {

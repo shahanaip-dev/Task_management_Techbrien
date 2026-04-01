@@ -42,6 +42,7 @@ export interface Project {
   created_at:  Date;
   creator?:    Pick<User, 'id' | 'name' | 'email'>;
   task_count?: number;
+  member_ids?: string[];
 }
 
 export interface Task {

@@ -22,14 +22,14 @@ export function taskRouter(db: Pool): Router {
   const taskSvc     = new TaskService(taskRepo, projectRepo, userRepo);
   const controller  = new TaskController(taskSvc);
 
-  router.use(authenticate);
+  router.use(authenticate as any);
 
-  router.post('/',              validateBody(CreateTaskSchema),  controller.create);
-  router.get('/',               validateQuery(TaskQuerySchema),  controller.list);
-  router.get('/:id',            controller.getOne);
-  router.put('/:id',            validateBody(UpdateTaskSchema),  controller.update);
-  router.patch('/:id/assign',   validateBody(AssignTaskSchema),  controller.assign);
-  router.delete('/:id',         controller.delete);
+  router.post('/',              validateBody(CreateTaskSchema),  controller.create as any);
+  router.get('/',               validateQuery(TaskQuerySchema),  controller.list as any);
+  router.get('/:id',            controller.getOne as any);
+  router.put('/:id',            validateBody(UpdateTaskSchema),  controller.update as any);
+  router.patch('/:id/assign',   validateBody(AssignTaskSchema),  controller.assign as any);
+  router.delete('/:id',         controller.delete as any);
 
   return router;
 }

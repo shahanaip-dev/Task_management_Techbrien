@@ -19,6 +19,7 @@ export class AuthService {
 
     if (!user) throw INVALID_CREDENTIALS;
 
+    if (!user.password) throw INVALID_CREDENTIALS;
     const passwordMatch = await comparePassword(input.password, user.password);
     if (!passwordMatch) throw INVALID_CREDENTIALS;
 
@@ -31,7 +32,7 @@ export class AuthService {
         name:      user.name,
         email:     user.email,
         role:      user.role,
-        createdAt: user.createdAt,
+        createdAt: user.created_at,
       },
     };
   }

@@ -14,13 +14,13 @@ export function projectRouter(db: Pool): Router {
   const projectSvc  = new ProjectService(projectRepo);
   const controller  = new ProjectController(projectSvc);
 
-  router.use(authenticate);
+  router.use(authenticate as any);
 
-  router.post('/',    authorize('ADMIN'), validateBody(CreateProjectSchema), controller.create);
-  router.get('/',     controller.list);
-  router.get('/:id',  controller.getOne);
-  router.put('/:id',  authorize('ADMIN'), validateBody(UpdateProjectSchema), controller.update);
-  router.delete('/:id', authorize('ADMIN'), controller.delete);
+  router.post('/',    authorize('ADMIN') as any, validateBody(CreateProjectSchema), controller.create as any);
+  router.get('/',     controller.list as any);
+  router.get('/:id',  controller.getOne as any);
+  router.put('/:id',  authorize('ADMIN') as any, validateBody(UpdateProjectSchema), controller.update as any);
+  router.delete('/:id', authorize('ADMIN') as any, controller.delete as any);
 
   return router;
 }

@@ -20,6 +20,8 @@ export interface Project {
   createdAt:   string;
   creator?:    Pick<User, 'id' | 'name' | 'email'>;
   _count?:     { tasks: number };
+  memberIds?:  string[];
+  member_ids?: string[];  // snake_case from backend
 }
 
 export interface Task {

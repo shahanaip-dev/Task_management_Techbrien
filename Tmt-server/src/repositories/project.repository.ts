@@ -18,7 +18,10 @@ export class ProjectRepository {
          p.id, p.name, p.description, p.created_by, p.created_at,
          u.id   AS creator_id,
          u.name AS creator_name,
-         u.email AS creator_email
+         u.email AS creator_email,
+         ARRAY(
+           SELECT pm.user_id::text FROM project_members pm WHERE pm.project_id = p.id
+         ) AS member_ids
        FROM projects p
        JOIN users u ON u.id = p.created_by
        WHERE p.id = $1`,
@@ -32,6 +35,7 @@ export class ProjectRepository {
       description: row.description,
       created_by:  row.created_by,
       created_at:  row.created_at,
+      member_ids:  row.member_ids ?? [],
       creator: {
         id:    row.creator_id,
         name:  row.creator_name,
@@ -77,23 +81,63 @@ export class ProjectRepository {
     }
   }
 
-  async update(id: string, data: { name?: string; description?: string }): Promise<Project> {
-    // Build SET clause dynamically from provided fields only
-    const fields: string[] = [];
-    const values: unknown[] = [];
-    let idx = 1;
+  async update(id: string, data: { name?: string; description?: string; memberIds?: string[] }): Promise<Project> {
+    const client = await this.db.connect();
+    try {
+      await client.query('BEGIN');
 
-    if (data.name        !== undefined) { fields.push(`name = $${idx++}`);        values.push(data.name); }
-    if (data.description !== undefined) { fields.push(`description = $${idx++}`); values.push(data.description); }
+      // Build SET clause dynamically from provided fields only
+      const fields: string[] = [];
+      const values: unknown[] = [];
+      let idx = 1;
 
-    values.push(id); // last param for WHERE clause
+      if (data.name        !== undefined) { fields.push(`name = $${idx++}`);        values.push(data.name); }
+      if (data.description !== undefined) { fields.push(`description = $${idx++}`); values.push(data.description); }
 
-    const { rows } = await this.db.query<Project>(
-      `UPDATE projects SET ${fields.join(', ')} WHERE id = $${idx}
-       RETURNING id, name, description, created_by, created_at`,
-      values
-    );
-    return rows[0];
+      let project: Project;
+      if (fields.length > 0) {
+        values.push(id);
+        const { rows } = await client.query<Project>(
+          `UPDATE projects SET ${fields.join(', ')} WHERE id = $${idx}
+           RETURNING id, name, description, created_by, created_at`,
+          values
+        );
+        project = rows[0];
+      } else {
+        const { rows } = await client.query<Project>(
+          `SELECT id, name, description, created_by, created_at FROM projects WHERE id = $1`,
+          [id]
+        );
+        project = rows[0];
+      }
+
+      // Update members if memberIds provided
+      if (data.memberIds !== undefined) {
+        await client.query(`DELETE FROM project_members WHERE project_id = $1`, [id]);
+        // Always keep the project creator as a member
+        const { rows: creatorRows } = await client.query<{ created_by: string }>(
+          `SELECT created_by FROM projects WHERE id = $1`, [id]
+        );
+        const creatorId = creatorRows[0]?.created_by;
+        const memberIds = Array.from(new Set([...(creatorId ? [creatorId] : []), ...data.memberIds]));
+        if (memberIds.length > 0) {
+          await client.query(
+            `INSERT INTO project_members (project_id, user_id)
+             SELECT $1, unnest($2::uuid[])
+             ON CONFLICT DO NOTHING`,
+            [id, memberIds]
+          );
+        }
+      }
+
+      await client.query('COMMIT');
+      return project;
+    } catch (err) {
+      await client.query('ROLLBACK');
+      throw err;
+    } finally {
+      client.release();
+    }
   }
 
   async delete(id: string): Promise<void> {
@@ -114,7 +158,10 @@ export class ProjectRepository {
            u.id    AS creator_id,
            u.name  AS creator_name,
            u.email AS creator_email,
-           (SELECT COUNT(*) FROM tasks t WHERE t.project_id = p.id)::int AS task_count
+           (SELECT COUNT(*) FROM tasks t WHERE t.project_id = p.id)::int AS task_count,
+           ARRAY(
+             SELECT pm.user_id::text FROM project_members pm WHERE pm.project_id = p.id
+           ) AS member_ids
          FROM projects p
          JOIN users u ON u.id = p.created_by
          ${nameFilter}
@@ -132,6 +179,7 @@ export class ProjectRepository {
       created_by:  row.created_by,
       created_at:  row.created_at,
       task_count:  row.task_count,
+      member_ids:  row.member_ids ?? [],
       creator: {
         id:    row.creator_id,
         name:  row.creator_name,
@@ -156,7 +204,10 @@ export class ProjectRepository {
            u.name  AS creator_name,
            u.email AS creator_email,
            (SELECT COUNT(*) FROM tasks t2
-            WHERE t2.project_id = p.id AND t2.assigned_to = $3)::int AS task_count
+            WHERE t2.project_id = p.id AND t2.assigned_to = $3)::int AS task_count,
+           ARRAY(
+             SELECT pm2.user_id::text FROM project_members pm2 WHERE pm2.project_id = p.id
+           ) AS member_ids
          FROM projects p
          JOIN users u ON u.id = p.created_by
          JOIN project_members pm ON pm.project_id = p.id AND pm.user_id = $3
@@ -182,6 +233,7 @@ export class ProjectRepository {
       created_by:  row.created_by,
       created_at:  row.created_at,
       task_count:  row.task_count,
+      member_ids:  row.member_ids ?? [],
       creator: {
         id:    row.creator_id,
         name:  row.creator_name,
@@ -200,7 +252,10 @@ export class ProjectRepository {
          u.name AS creator_name,
          u.email AS creator_email,
          (SELECT COUNT(*) FROM tasks t2
-          WHERE t2.project_id = p.id AND t2.assigned_to = $2)::int AS task_count
+          WHERE t2.project_id = p.id AND t2.assigned_to = $2)::int AS task_count,
+         ARRAY(
+           SELECT pm2.user_id::text FROM project_members pm2 WHERE pm2.project_id = p.id
+         ) AS member_ids
        FROM projects p
        JOIN users u ON u.id = p.created_by
        JOIN project_members pm ON pm.project_id = p.id AND pm.user_id = $2
@@ -217,6 +272,7 @@ export class ProjectRepository {
       created_by:  row.created_by,
       created_at:  row.created_at,
       task_count:  row.task_count,
+      member_ids:  row.member_ids ?? [],
       creator: {
         id:    row.creator_id,
         name:  row.creator_name,

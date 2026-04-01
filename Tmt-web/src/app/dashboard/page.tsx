@@ -64,7 +64,9 @@ export default function DashboardPage() {
   // ── Edit ────────────────────────────────────────────────────────────────────
   const openEdit = (project: Project) => {
     setEditTarget(project);
-    setForm({ name: project.name, description: project.description ?? '', memberIds: [] });
+    // Prefer snake_case from backend API response; fall back to camelCase
+    const currentMembers = project.member_ids ?? project.memberIds ?? [];
+    setForm({ name: project.name, description: project.description ?? '', memberIds: currentMembers });
     setShowEdit(true);
   };
 
@@ -74,7 +76,11 @@ export default function DashboardPage() {
     if (!form.name.trim()) return toast.error('Project name is required');
     setSaving(true);
     try {
-      await updateProject(editTarget.id, { name: form.name.trim(), description: form.description });
+      await updateProject(editTarget.id, {
+        name:        form.name.trim(),
+        description: form.description,
+        memberIds:   form.memberIds,
+      });
       toast.success('Project updated');
       setShowEdit(false);
       setEditTarget(null);
@@ -252,6 +258,7 @@ export default function DashboardPage() {
               value={form.name} onChange={(e) => setForm({ ...form, name: e.target.value })} />
             <Textarea label="Description" placeholder="What is this project about?"
               value={form.description ?? ''} onChange={(e) => setForm({ ...form, description: e.target.value })} />
+            <UserCheckboxList />
             <div className="flex justify-end gap-2 pt-3 border-t border-[#C6A0A0]">
               <Button variant="secondary" type="button" onClick={() => { setShowEdit(false); setEditTarget(null); }}>Cancel</Button>
               <Button type="submit" loading={saving}>Save Changes</Button>

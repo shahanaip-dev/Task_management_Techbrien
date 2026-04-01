@@ -15,13 +15,13 @@ export function userRouter(db: Pool): Router {
   const controller = new UserController(userSvc);
 
   // All user endpoints: must be authenticated + ADMIN role
-  router.use(authenticate, authorize('ADMIN'));
+  router.use(authenticate as any, authorize('ADMIN') as any);
 
-  router.post('/', validateBody(CreateUserSchema), controller.createUser);
-  router.get('/',  controller.listUsers);
-  router.get('/:id', controller.getUser);
-  router.put('/:id', validateBody(UpdateUserSchema), controller.updateUser);
-  router.delete('/:id', controller.deleteUser);
+  router.post('/', validateBody(CreateUserSchema), controller.createUser as any);
+  router.get('/',  controller.listUsers as any);
+  router.get('/:id', controller.getUser as any);
+  router.put('/:id', validateBody(UpdateUserSchema), controller.updateUser as any);
+  router.delete('/:id', controller.deleteUser as any);
 
   return router;
 }

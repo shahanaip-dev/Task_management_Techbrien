@@ -14,7 +14,7 @@ export function authRouter(db: Pool): Router {
   const controller = new AuthController(authSvc);
 
   router.post('/login', validateBody(LoginSchema), controller.login);
-  router.get('/me',     authenticate,              controller.me);
+  router.get('/me',     authenticate as any,       controller.me);
 
   return router;
 }
