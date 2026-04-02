@@ -8,308 +8,153 @@ import Modal from '@/components/ui/Modal';
 import Input, { Textarea } from '@/components/ui/Input';
 import Button from '@/components/ui/Button';
 import { useAuth } from '@/context/AuthContext';
-import { useProjects } from '@/hooks/useProjects';
-import { usersApi, projectsApi } from '@/lib/api';
-import type { CreateProjectForm, Project, User } from '@/types';
+import { usersApi, projectsApi, tasksApi } from '@/lib/api';
+import type { Project, User, Task } from '@/types';
+import StatCard from '@/components/dashboard/StatCard';
+import TaskOverviewCharts from '@/components/dashboard/TaskOverviewCharts';
+import Link from 'next/link';
 
-const EMPTY_FORM: CreateProjectForm = { name: '', description: '', memberIds: [] };
+const EMPTY_FORM: any = null; // Unused in dashboard
 
 export default function DashboardPage() {
-  const { isAdmin } = useAuth();
-  const { projects, meta, loading, error, createProject, updateProject, deleteProject, offset, setOffset, search, setSearch } = useProjects(12);
-
-  const debounceRef                   = useRef<ReturnType<typeof setTimeout> | null>(null);
-  const [inputValue, setInputValue]   = useState('');
-  const [showCreate, setShowCreate]   = useState(false);
-  const [showEdit,   setShowEdit]     = useState(false);
-  const [editTarget, setEditTarget]   = useState<Project | null>(null);
-  const [form,       setForm]         = useState<CreateProjectForm>(EMPTY_FORM);
-  const [saving,        setSaving]       = useState(false);
+  const { user, isAdmin } = useAuth();
   const [users,         setUsers]        = useState<User[]>([]);
-  const [loadingMembers, setLoadingMembers] = useState(false);
+  const [allTasks,      setAllTasks]     = useState<Task[]>([]);
+  const [projects,      setProjects]     = useState<Project[]>([]);
+  const [loading,       setLoading]      = useState(true);
 
-  // Debounced search
-  const handleSearchInput = (value: string) => {
-    setInputValue(value);
-    if (debounceRef.current) clearTimeout(debounceRef.current);
-    debounceRef.current = setTimeout(() => setSearch(value), 350);
-  };
-
-  // Fetch non-admin users for member assignment
   useEffect(() => {
-    if (!isAdmin) return;
-    usersApi.list({ limit: 200 })
-      .then((r) => {
-        const all: User[] = r.data.data.data;
-        // Exclude system admin (role ADMIN) from the assignable list
-        setUsers(all.filter((u) => u.role !== 'ADMIN'));
+    setLoading(true);
+    const apiCalls: any[] = [
+      projectsApi.list({ limit: 1000 }),
+      tasksApi.list({ limit: 1000 }),
+    ];
+    
+    if (isAdmin) {
+      apiCalls.push(usersApi.list({ limit: 1000 }));
+    }
+
+    Promise.all(apiCalls)
+      .then((results: any[]) => {
+        const pRes = results[0];
+        const tRes = results[1];
+        const uRes = results[2];
+
+        setProjects(pRes.data.data.data);
+        setAllTasks(tRes.data.data.data);
+        if (uRes) {
+          setUsers(uRes.data.data.data.filter((u: User) => u.role !== 'ADMIN'));
+        }
       })
-      .catch(() => {});
+      .catch((err) => toast.error('Failed to load dashboard data'))
+      .finally(() => setLoading(false));
   }, [isAdmin]);
 
-  // ── Create ──────────────────────────────────────────────────────────────────
-  const handleCreate = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!form.name.trim()) return toast.error('Project name is required');
-    setSaving(true);
-    try {
-      await createProject({ ...form, name: form.name.trim(), memberIds: form.memberIds?.length ? form.memberIds : undefined });
-      toast.success('Project created');
-      setForm(EMPTY_FORM);
-      setShowCreate(false);
-    } catch (err: any) {
-      toast.error(err?.response?.data?.message ?? 'Failed to create project');
-    } finally { setSaving(false); }
-  };
+  // ── Dashboard Data Prep ──────────────────────────────────────────────────
+  const statusData = [
+    { name: 'To Do',       value: allTasks.filter((t: Task) => t.status === 'TODO').length },
+    { name: 'In Progress', value: allTasks.filter((t: Task) => t.status === 'IN_PROGRESS').length },
+    { name: 'Done',        value: allTasks.filter((t: Task) => t.status === 'DONE').length },
+  ];
 
-  // ── Edit ────────────────────────────────────────────────────────────────────
-  const openEdit = async (project: Project) => {
-    setEditTarget(project);
-    // Start with name/description immediately; members load from fresh API call
-    setForm({ name: project.name, description: project.description ?? '', memberIds: [] });
-    setShowEdit(true);
-    setLoadingMembers(true);
-    try {
-      const res = await projectsApi.getOne(project.id);
-      const projectDetail = res.data.data;
+  const projectTaskCounts = projects.map((p: Project) => ({
+    name:  p.name,
+    value: allTasks.filter((t: Task) => t.projectId === p.id).length
+  })).filter((p) => p.value > 0);
 
-      const currentMembers: string[] = projectDetail.memberIds ?? [];
-      setForm((prev) => ({ ...prev, memberIds: currentMembers }));
-    } catch {
-      // If fetch fails, fall back to what we already have in the list
-      const fallback = project.memberIds ?? [];
-      setForm((prev) => ({ ...prev, memberIds: fallback }));
-    } finally {
-      setLoadingMembers(false);
-    }
-  };
-
-  const handleEdit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!editTarget) return;
-    if (!form.name.trim()) return toast.error('Project name is required');
-    setSaving(true);
-    try {
-      await updateProject(editTarget.id, {
-        name:        form.name.trim(),
-        description: form.description,
-        memberIds:   form.memberIds,
-      });
-      toast.success('Project updated');
-      setShowEdit(false);
-      setEditTarget(null);
-      setForm(EMPTY_FORM);
-    } catch (err: any) {
-      toast.error(err?.response?.data?.message ?? 'Failed to update project');
-    } finally { setSaving(false); }
-  };
-
-  // ── Delete ──────────────────────────────────────────────────────────────────
-  const handleDelete = async (id: string) => {
-    if (!confirm('Delete this project? All tasks will be removed.')) return;
-    try { await deleteProject(id); toast.success('Project deleted'); }
-    catch { toast.error('Failed to delete project'); }
-  };
-
-  // ── Inline user checkbox list JSX (avoids stale-closure issues with nested components)
-  const userCheckboxListJsx = (
-    <div className="flex flex-col gap-2">
-      <label className="text-xs font-medium text-[#1C1A18] tracking-wide uppercase">Assign Users</label>
-      <div className="max-h-40 overflow-auto rounded border border-[#E8DDD4] bg-white p-3">
-        {users.length === 0 ? (
-          <p className="text-xs text-[#8A8278]">No users available</p>
-        ) : (
-          users.map((u) => (
-            <label key={u.id} className="flex items-center gap-2 py-1 text-sm text-[#1C1A18]">
-              <input
-                type="checkbox"
-                className="accent-[#7D1F1F]"
-                checked={!!form.memberIds?.includes(u.id)}
-                onChange={(e) => {
-                  const next = new Set(form.memberIds ?? []);
-                  if (e.target.checked) next.add(u.id); else next.delete(u.id);
-                  setForm({ ...form, memberIds: Array.from(next) });
-                }}
-              />
-              <span>{u.name}</span>
-              <span className="text-xs text-[#8A8278]">({u.email})</span>
-            </label>
-          ))
-        )}
-      </div>
-      <p className="text-xs text-[#8A8278]">Only assigned users can create tasks in this project.</p>
-    </div>
-  );
-
-  const editUserCheckboxListJsx = (
-    <div className="flex flex-col gap-2">
-      <label className="text-xs font-medium text-[#1C1A18] tracking-wide uppercase">Assign Users</label>
-      <div className="max-h-40 overflow-auto rounded border border-[#E8DDD4] bg-white p-3 relative">
-        {loadingMembers ? (
-          <p className="text-xs text-[#8A8278] italic">Loading members…</p>
-        ) : users.length === 0 ? (
-          <p className="text-xs text-[#8A8278]">No users available</p>
-        ) : (
-          users.map((u) => (
-            <label key={u.id} className="flex items-center gap-2 py-1 text-sm text-[#1C1A18]">
-              <input
-                type="checkbox"
-                className="accent-[#7D1F1F]"
-                checked={!!form.memberIds?.includes(u.id)}
-                onChange={(e) => {
-                  const next = new Set(form.memberIds ?? []);
-                  if (e.target.checked) next.add(u.id); else next.delete(u.id);
-                  setForm({ ...form, memberIds: Array.from(next) });
-                }}
-              />
-              <span>{u.name}</span>
-              <span className="text-xs text-[#8A8278]">({u.email})</span>
-            </label>
-          ))
-        )}
-      </div>
-      <p className="text-xs text-[#8A8278]">Only assigned users can create tasks in this project.</p>
-    </div>
-  );
+  if (loading) {
+    return (
+      <AppLayout>
+        <div className="animate-pulse space-y-8">
+          <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+            {[1, 2, 3, 4].map(i => <div key={i} className="h-32 bg-[#F5E6DC] rounded-xl" />)}
+          </div>
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+            <div className="h-80 bg-[#F5E6DC] rounded-xl" />
+            <div className="h-80 bg-[#F5E6DC] rounded-xl" />
+          </div>
+        </div>
+      </AppLayout>
+    );
+  }
 
   return (
     <AppLayout>
-      {/* Page header */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-8">
-        <div>
-          <h1 className="font-serif text-2xl font-semibold text-[#4B1414]">Projects</h1>
-          <p className="text-sm text-[#8A8278] mt-0.5 font-light">
-            {meta ? `${meta.total} project${meta.total !== 1 ? 's' : ''}` : '—'}
-          </p>
-        </div>
-        {isAdmin && (
-          <Button onClick={() => { setForm(EMPTY_FORM); setShowCreate(true); }}>+ New Project</Button>
+      <div className="mb-8">
+        <h1 className="font-serif text-2xl font-semibold text-[#4B1414]">Dashboard</h1>
+        <p className="text-sm text-[#8A8278] mt-0.5 font-light">
+          Welcome back, {user?.name}. Here's what's happening.
+        </p>
+      </div>
+
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
+        <StatCard 
+          label={isAdmin ? "Total Tasks" : "My Tasks"} 
+          value={allTasks.length} 
+          icon={
+            <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2" />
+            </svg>
+          }
+        />
+        <StatCard 
+          label={isAdmin ? "Active Projects" : "My Projects"}
+          value={projects.length}
+          icon={
+            <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 7v10a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2h-6l-2-2H5a2 2 0 00-2 2z" />
+            </svg>
+          }
+        />
+        <StatCard 
+          label="Tasks Done" 
+          value={allTasks.filter(t => t.status === 'DONE').length}
+          className="border-green-100"
+          icon={
+            <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+            </svg>
+          }
+        />
+        {isAdmin ? (
+          <StatCard 
+            label="Team Members" 
+            value={users.length}
+            icon={
+              <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z" />
+              </svg>
+            }
+          />
+        ) : (
+          <StatCard 
+            label="In Progress" 
+            value={allTasks.filter(t => t.status === 'IN_PROGRESS').length}
+            className="border-orange-100"
+            icon={
+              <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+              </svg>
+            }
+          />
         )}
       </div>
+      
+      <TaskOverviewCharts statusData={statusData} projectData={projectTaskCounts} />
 
-      {/* Search bar */}
-      <div className="mb-6">
-        <div className="relative w-full sm:max-w-sm">
-          <svg className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-[#8A8278] pointer-events-none" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-4.35-4.35M17 11A6 6 0 115 11a6 6 0 0112 0z" />
-          </svg>
-          <input
-            type="text"
-            placeholder="Search projects…"
-            value={inputValue}
-            onChange={(e) => handleSearchInput(e.target.value)}
-            className="block w-full pl-9 pr-9 py-2.5 text-sm rounded border border-[#E8DDD4] bg-white text-[#1C1A18] placeholder-[#C4B8AD] focus:outline-none focus:ring-2 focus:ring-[#7D1F1F]/30 focus:border-[#7D1F1F]/50 transition-colors duration-200"
-          />
-          {inputValue && (
-            <button
-              onClick={() => { setInputValue(''); setSearch(''); }}
-              className="absolute right-3 top-1/2 -translate-y-1/2 text-[#8A8278] hover:text-[#1C1A18]"
-            >
-              <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-              </svg>
-            </button>
-          )}
-        </div>
-      </div>
-
-      {/* Error */}
-      {error && (
-        <div className="bg-red-50 border border-red-200 text-red-700 rounded-lg p-4 mb-6 text-sm">{error}</div>
-      )}
-
-      {/* Stats row */}
-      {!loading && meta && meta.total > 0 && (
-        <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-8">
-          {[
-            { label: 'Total Projects', value: meta.total },
-            { label: 'Active Projects', value: projects.length },
-            { label: 'Total Tasks',    value: projects.reduce((s, p) => s + (p.taskCount ?? 0), 0) },
-          ].map((stat) => (
-            <div key={stat.label} className="bg-[#F1E7E7] rounded-lg border border-[#C6A0A0] px-5 py-4">
-              <p className="text-xs text-[#5B2F2F] uppercase tracking-wide font-medium">{stat.label}</p>
-              <p className="font-serif text-2xl font-semibold text-[#4B1414] mt-1">{stat.value}</p>
-            </div>
-          ))}
-        </div>
-      )}
-
-      {/* Projects grid */}
-      {loading ? (
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5">
-          {Array.from({ length: 6 }).map((_, i) => (
-            <div key={i} className="h-44 bg-white rounded-lg border border-[#C6A0A0] animate-pulse" />
-          ))}
-        </div>
-      ) : projects.length === 0 ? (
-        <div className="text-center py-24">
-          <div className="w-14 h-14 bg-[#F5E6DC] rounded-2xl flex items-center justify-center mx-auto mb-5">
-            <svg className="w-7 h-7 text-[#7D1F1F]" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5}
-                d="M9 13h6m-3-3v6m-9 1V7a2 2 0 012-2h6l2 2h6a2 2 0 012 2v8a2 2 0 01-2 2H5a2 2 0 01-2-2z" />
-            </svg>
+      {!isAdmin && (
+        <div className="bg-white rounded-xl border border-[#E8DDD4] p-6 shadow-sm">
+          <h3 className="font-serif text-lg font-semibold text-[#1C1A18] mb-4">Task Quick View</h3>
+          <p className="text-sm text-[#8A8278] mb-4">Go to the Tasks page to manage your assignments in detail.</p>
+          <div className="flex gap-3">
+            <Link href="/tasks">
+              <Button size="sm">Go to Tasks</Button>
+            </Link>
+            <Link href="/projects">
+              <Button variant="secondary" size="sm">View Projects</Button>
+            </Link>
           </div>
-          <h3 className="font-serif text-xl font-semibold text-[#4B1414] mb-2">
-            {search ? 'No matching projects' : isAdmin ? 'No projects yet' : 'No assigned projects'}
-          </h3>
-          <p className="text-sm text-[#8A8278] mb-7 font-light">
-            {search
-              ? `No projects found matching "${search}"`
-              : isAdmin ? 'Create your first project to get started' : 'You have not been assigned to any projects'}
-          </p>
-          {isAdmin && <Button onClick={() => { setForm(EMPTY_FORM); setShowCreate(true); }}>Create Project</Button>}
         </div>
-      ) : (
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5">
-          {projects.map((p) => (
-            <ProjectCard key={p.id} project={p} onDelete={handleDelete} onEdit={openEdit} isAdmin={isAdmin} />
-          ))}
-        </div>
-      )}
-
-      {/* Pagination */}
-      {meta && meta.totalPages > 1 && (
-        <div className="flex justify-center items-center gap-3 mt-12">
-          <Button variant="secondary" size="sm" disabled={offset === 0}
-            onClick={() => setOffset(Math.max(0, offset - 12))}>← Previous</Button>
-          <span className="text-sm text-[#8A8278]">Page {meta.currentPage} of {meta.totalPages}</span>
-          <Button variant="secondary" size="sm" disabled={meta.currentPage >= meta.totalPages}
-            onClick={() => setOffset(offset + 12)}>Next →</Button>
-        </div>
-      )}
-
-      {/* Create Modal */}
-      {isAdmin && (
-        <Modal isOpen={showCreate} onClose={() => setShowCreate(false)} title="New Project">
-          <form onSubmit={handleCreate} className="flex flex-col gap-4">
-            <Input label="Project name" required placeholder="E.g. Website Redesign"
-              value={form.name} onChange={(e) => setForm({ ...form, name: e.target.value })} />
-            <Textarea label="Description" placeholder="What is this project about?"
-              value={form.description ?? ''} onChange={(e) => setForm({ ...form, description: e.target.value })} />
-            {userCheckboxListJsx}
-            <div className="flex justify-end gap-2 pt-3 border-t border-[#C6A0A0]">
-              <Button variant="secondary" type="button" onClick={() => setShowCreate(false)}>Cancel</Button>
-              <Button type="submit" loading={saving}>Create Project</Button>
-            </div>
-          </form>
-        </Modal>
-      )}
-
-      {/* Edit Modal */}
-      {isAdmin && (
-        <Modal isOpen={showEdit} onClose={() => { setShowEdit(false); setEditTarget(null); }} title="Edit Project">
-          <form onSubmit={handleEdit} className="flex flex-col gap-4">
-            <Input label="Project name" required placeholder="E.g. Website Redesign"
-              value={form.name} onChange={(e) => setForm({ ...form, name: e.target.value })} />
-            <Textarea label="Description" placeholder="What is this project about?"
-              value={form.description ?? ''} onChange={(e) => setForm({ ...form, description: e.target.value })} />
-            {editUserCheckboxListJsx}
-            <div className="flex justify-end gap-2 pt-3 border-t border-[#C6A0A0]">
-              <Button variant="secondary" type="button" onClick={() => { setShowEdit(false); setEditTarget(null); }}>Cancel</Button>
-              <Button type="submit" loading={saving}>Save Changes</Button>
-            </div>
-          </form>
-        </Modal>
       )}
     </AppLayout>
   );
