@@ -23,7 +23,7 @@ export default function Input({ label, error, hint, leftIcon, rightIcon, id, cla
         <input
           id={inputId}
           className={clsx(
-            'block w-full rounded border px-3 py-2.5 text-sm font-sans font-light',
+            'block w-full rounded-full border px-4 py-2.5 text-sm font-sans font-light',
             'bg-white placeholder-[#C4B8AD] text-[#1C1A18]',
             'focus:outline-none focus:ring-2 focus:ring-[#7D1F1F]/30 focus:border-[#7D1F1F]/50',
             'transition-colors duration-200',
@@ -69,8 +69,8 @@ export function Textarea({ label, error, id, className, ...props }: TextareaProp
         id={inputId}
         rows={3}
         className={clsx(
-          'block w-full rounded border px-3 py-2.5 text-sm font-sans font-light',
-          'bg-white placeholder-[#C4B8AD] text-[#1C1A18] resize-none',
+          'block w-full rounded-full border px-4 py-2.5 text-sm font-sans font-light',
+          'bg-white placeholder-[#C4B8AD] text-[#1C1A18] resize-none overflow-hidden leading-tight',
           'focus:outline-none focus:ring-2 focus:ring-[#7D1F1F]/30 focus:border-[#7D1F1F]/50',
           'transition-colors duration-200',
           error ? 'border-red-400 bg-red-50' : 'border-[#E8DDD4] hover:border-[#C4B8AD]',
@@ -109,7 +109,7 @@ export function Select({ label, error, leftIcon, id, options, placeholder, class
         <select
           id={inputId}
           className={clsx(
-            'block w-full rounded border px-3 py-2.5 text-sm font-sans font-light',
+            'block w-full rounded-full border px-4 py-2.5 text-sm font-sans font-light',
             'bg-white text-[#1C1A18] appearance-none',
             'focus:outline-none focus:ring-2 focus:ring-[#7D1F1F]/30 focus:border-[#7D1F1F]/50',
             'transition-colors duration-200',

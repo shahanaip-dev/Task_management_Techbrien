@@ -1,226 +1,158 @@
-﻿# TMT â€” Task Management Tool
+# TMT Task Management (Go + Next)
 
-A production-quality Project Management System built with **Node.js + TypeScript**, **Next.js App Router**, and **PostgreSQL**.
-
----
-
-## Architecture Overview
-
-```
-â”Œâ”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”
-â”‚                    FRONTEND (Next.js)                â”‚
-â”‚  Pages: /login  /dashboard  /tasks                   â”‚
-â”‚  Context â†’ Hooks â†’ API Client (Axios)                â”‚
-â””â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”¬â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”˜
-                      â”‚ HTTP/REST
-â”Œâ”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â–¼â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”
-â”‚              BACKEND (Express + TypeScript)           â”‚
-â”‚                                                      â”‚
-â”‚  Routes â†’ Controllers â†’ Services â†’ Repositories     â”‚
-â”‚                    â†“           â†“                     â”‚
-â”‚            Zod Schemas    Prisma ORM                 â”‚
-â”‚              (Validation)     â†“                      â”‚
-â”‚                         PostgreSQL                   â”‚
-â””â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”˜
-```
-
-### Clean Architecture Layers
-
-| Layer          | Responsibility                                          |
-|----------------|---------------------------------------------------------|
-| **Routes**     | Map HTTP endpoints to controllers                       |
-| **Controllers**| Parse request, call service, send response              |
-| **Services**   | Business logic, orchestration, throws `AppError`        |
-| **Repositories**| All DB queries via Prisma (single source of truth)     |
-| **Schemas**    | Zod request validation â€” coerces and validates input    |
-| **Middleware** | JWT auth, RBAC, validation, centralized error handler   |
+This repository hosts a Go-powered REST backend together with a Next.js App Router frontend that delivers a simplified yet production-looking task/project workspace tailored for Techbrien’s machine test. Authentication is handled via JWT, the UI is Tailwind-powered, and everything can run locally or via Docker Compose.
 
 ---
 
-## ER Diagram
-
-```mermaid
-erDiagram
-    USERS {
-        uuid   id          PK
-        string name
-        string email       UK
-        string password
-        enum   role        "ADMIN | DEVELOPER"
-        date   created_at
-    }
-
-    PROJECTS {
-        uuid   id          PK
-        string name
-        string description
-        uuid   created_by  FK
-        date   created_at
-    }
-
-    TASKS {
-        uuid   id          PK
-        string title
-        string description
-        enum   status      "TODO | IN_PROGRESS | DONE"
-        uuid   project_id  FK
-        uuid   assigned_to FK
-        date   due_date
-        date   created_at
-    }
-
-    USERS ||--o{ PROJECTS : "creates"
-    USERS ||--o{ TASKS    : "is assigned"
-    PROJECTS ||--o{ TASKS : "contains"
-```
-
----
-
-## Project Structure
+## Architecture
 
 ```
 Task_management_Techbrien/
-â”œâ”€â”€ Tmt-server/               â† Express REST API
-â”‚   â”œâ”€â”€ prisma/
-â”‚   â”‚   â”œâ”€â”€ schema.prisma     â† DB schema
-â”‚   â”‚   â””â”€â”€ seed.ts           â† Seed script
-â”‚   â”œâ”€â”€ src/
-â”‚   â”‚   â”œâ”€â”€ config/           â† Env config
-â”‚   â”‚   â”œâ”€â”€ types/            â† TypeScript types
-â”‚   â”‚   â”œâ”€â”€ utils/            â† JWT, bcrypt, pagination
-â”‚   â”‚   â”œâ”€â”€ schemas/          â† Zod validation schemas
-â”‚   â”‚   â”œâ”€â”€ middleware/       â† Auth, RBAC, error handler
-â”‚   â”‚   â”œâ”€â”€ repositories/     â† Prisma data access
-â”‚   â”‚   â”œâ”€â”€ services/         â† Business logic
-â”‚   â”‚   â”œâ”€â”€ controllers/      â† HTTP handlers
-â”‚   â”‚   â”œâ”€â”€ api/routes/       â† Express routes
-â”‚   â”‚   â””â”€â”€ app.ts            â† Entry point
-â”‚   â””â”€â”€ tests/                â† Jest unit tests
-â”‚
-â”œâ”€â”€ Tmt-web/                  â† Next.js App Router frontend
-â”‚   â””â”€â”€ src/
-â”‚       â”œâ”€â”€ app/              â† Pages (login, dashboard, tasks)
-â”‚       â”œâ”€â”€ components/       â† UI, layout, domain components
-â”‚       â”œâ”€â”€ context/          â† AuthContext
-â”‚       â”œâ”€â”€ hooks/            â† useProjects, useTasks
-â”‚       â”œâ”€â”€ lib/              â† Axios client, auth helpers
-â”‚       â””â”€â”€ types/            â† Shared TypeScript types
-â”‚
-â””â”€â”€ docker-compose.yml
+├── Tmt-server-go/     # Go backend (chi router + pgx + sqlx-style services)
+│   ├── cmd/server/    # Entry point (`go run ./cmd/server`)
+│   ├── internal/
+│   │   ├── config/    # env + dotenv helpers
+│   │   ├── http/      # handlers, middleware, router setup
+│   │   ├── services/  # business logic (projects, tasks, users)
+│   │   └── types/     # shared DTOs + enums
+│   └── go.mod         # Go 1.22 module, dependencies like `chi`, `pgx`, `bcrypt`
+├── Tmt-web/           # Next.js (App Router) TypeScript frontend
+│   ├── src/
+│   │   ├── app/        # Projects/Tasks/Users + root redirect + auth layout
+│   │   ├── components/ # Cards, layout, buttons, modal
+│   │   ├── context/    # AuthContext that exposes `user` + `isAdmin`
+│   │   ├── hooks/      # data hooks (`useProjects`, `useTasks`, `useUsers`)
+│   │   ├── lib/        # Axios client + auth helpers
+│   │   └── types/      # Shared DTO definitions
+│   ├── next.config.js
+│   └── package.json
+├── docker-compose.yml  # Spins up Go backend, PostgreSQL, and Next.js frontend
+└── README.md           # This file
 ```
 
 ---
 
-## Setup Instructions
+## Stack at a Glance
 
-### Prerequisites
-- Node.js 20+
-- PostgreSQL 14+ (or Docker)
+| Layer        | Technology                                 |
+|--------------|--------------------------------------------|
+| Backend      | Go 1.22 · Chi router · pgx/stdlib + bcrypt |
+| Database     | PostgreSQL                                 |
+| Frontend     | Next.js 14 App Router · Tailwind CSS       |
+| HTTP Client  | Axios                                      |
+| Auth         | JWT (custom middleware)                    |
+| Container    | Docker Compose                             |
 
-### 1. Database (Docker)
+---
 
-```bash
-docker compose up db -d
+## Local Setup
+
+### 1. PostgreSQL
+
+Set `DATABASE_URL` in `Tmt-server-go/.env` (sample below) or use the compose service.
+
+```
+DATABASE_URL=postgres://postgres:password@localhost:5432/task_management?sslmode=disable
+DB_USER=postgres
+DB_PASSWORD=Fathima@123
+DB_NAME=task_management
+DB_HOST=localhost
+DB_PORT=5432
+JWT_SECRET=GFDSDFSDGHFJKHKGJHGDGHFgfgdghfgjgvcxgc
+JWT_EXPIRES_IN=8h
+FRONTEND_URL=http://localhost:3000
+PORT=5000
+NODE_ENV=development
 ```
 
-Or point `DATABASE_URL` at an existing PostgreSQL instance.
+### 2. Backend (Go)
 
-### 2. Backend
-
-```bash
-cd Tmt-server
-npm install
-cp .env.example .env          # Fill in your values
-npm run db:migrate               # Creates tables\nnpm run db:seed               # Creates admin user for login
-npm run dev
-# Server: http://localhost:5000
+```
+cd Tmt-server-go
+go mod tidy          # ensure go.sum matches imports
+go run ./cmd/server  # runs on :5000
 ```
 
-### 3. Frontend
+The server exposes `/api/v1/*` routes and enforces JWT via middleware. Create a user via `POST /api/v1/users` (admin only).
 
-```bash
+### 3. Frontend (Next.js)
+
+```
 cd Tmt-web
 npm install
-cp .env.example .env.local    # Set NEXT_PUBLIC_API_URL
-npm run dev
-# App: http://localhost:3000
+npm run dev          # http://localhost:3000
 ```
 
-### 4. Full stack with Docker
+The frontend fetches from `NEXT_PUBLIC_API_URL` (default `http://localhost:5000/api/v1`). Login redirects to `/projects` and shows project/task dashboards with inline create/edit flows.
 
-```bash
-cp .env.example .env          # at root
+### 4. Full Stack via Docker
+
+```
+cp .env.example .env              # top-level env for compose
 docker compose up --build
 ```
 
-### Default Credentials (after seed)
-
-| Role  | Email         | Password  |\n|-------|---------------|-----------|\n| Admin | admin@tmt.com  | Admin@123 |
+Services:
+- `backend`: builds Go service from `Tmt-server-go`
+- `frontend`: builds Next.js app
+- `db`: PostgreSQL
 
 ---
 
-## API Endpoints
+## Key Experiences
+
+- **Projects tab**: search by name, quick create form, project cards include view/edit/delete (edit/delete only for admins), pagination limit 8 items per page, 4-column grid.
+- **Tasks tab**: filters by title/project/due date, inline create form, cards show status badges + edit/view icons, pagination limit 8 as well.
+- **Team tab (admin only)**: list of non-admin users, inline create/edit/delete for team members (admin itself hidden from list).
+- **Change password modal**: available in sidebar for any user (requests `PATCH /users/me/password`).
+
+---
+
+## API Reference
 
 ### Auth
-| Method | Path              | Auth | Description           |
-|--------|-------------------|------|-----------------------|
-| POST   | /api/v1/auth/login| âœ—    | Login, receive JWT    |
-| GET    | /api/v1/auth/me   | âœ“    | Get current user      |
 
-### Users *(Admin only)*
-| Method | Path           | Description        |
-|--------|----------------|--------------------|
-| POST   | /api/v1/users  | Create user        |
-| GET    | /api/v1/users  | List users (paged) |
+| Method | Path                 | Description             |
+|--------|----------------------|-------------------------|
+| POST   | `/api/v1/auth/login`  | Authenticate and receive JWT |
+| GET    | `/api/v1/auth/me`     | Current user profile     |
 
-### Projects *(All authenticated)*
-| Method | Path                | Description           |
-|--------|---------------------|-----------------------|
-| POST   | /api/v1/projects    | Create project        |
-| GET    | /api/v1/projects    | List projects (paged) |
-| GET    | /api/v1/projects/:id| Get project by ID     |
-| PUT    | /api/v1/projects/:id| Update project        |
-| DELETE | /api/v1/projects/:id| Delete project        |
+### Users (admin only)
 
-### Tasks *(All authenticated)*
-| Method | Path                      | Description                          |
-|--------|---------------------------|--------------------------------------|
-| POST   | /api/v1/tasks             | Create task                          |
-| GET    | /api/v1/tasks             | List tasks (filter + paginate)       |
-| GET    | /api/v1/tasks/:id         | Get task by ID                       |
-| PUT    | /api/v1/tasks/:id         | Update task                          |
-| PATCH  | /api/v1/tasks/:id/assign  | Assign task to user                  |
-| DELETE | /api/v1/tasks/:id         | Delete task                          |
+| Method | Path                | Description                   |
+|--------|---------------------|-------------------------------|
+| GET    | `/api/v1/users`      | List users (cursor pagination, returns admins + employees) |
+| POST   | `/api/v1/users`      | Create user (admin)            |
+| PUT    | `/api/v1/users/:id`  | Update user                    |
+| DELETE | `/api/v1/users/:id`  | Delete user                    |
+| PATCH  | `/api/v1/users/me/password` | Change own password        |
 
-#### Task Filters (query params)
-```
-GET /api/v1/tasks?projectId=<uuid>&status=IN_PROGRESS&assignedTo=<uuid>&limit=10&cursor=<cursor>
-```
+### Projects
 
----
+| Method | Path                        | Description           |
+|--------|-----------------------------|-----------------------|
+| GET    | `/api/v1/projects`           | List projects (supports `limit`, `name`) |
+| POST   | `/api/v1/projects`           | Create project        |
+| GET    | `/api/v1/projects/:id`       | View project          |
+| PUT    | `/api/v1/projects/:id`       | Update project (admin only) |
+| DELETE | `/api/v1/projects/:id`       | Delete project (admin only) |
 
-## Running Tests
+### Tasks
 
-```bash
-cd Tmt-server
-npm test              # All unit tests
-npm run test:coverage # With coverage report
-```
+| Method | Path                         | Description           |
+|--------|------------------------------|-----------------------|
+| GET    | `/api/v1/tasks`               | List tasks (supports `limit`, filters) |
+| POST   | `/api/v1/tasks`               | Create task            |
+| GET    | `/api/v1/tasks/:id`           | View task              |
+| PUT    | `/api/v1/tasks/:id`           | Update task            |
+| PATCH  | `/api/v1/tasks/:id/assign`    | Assign user to task    |
+| DELETE | `/api/v1/tasks/:id`           | Delete task            |
 
 ---
 
-## Tech Stack
+## Next Steps
 
-| Layer      | Technology                              |
-|------------|-----------------------------------------|
-| Backend    | Node.js + TypeScript + Express          |
-| ORM        | Prisma 5                                |
-| Database   | PostgreSQL 16                           |
-| Validation | Zod                                     |
-| Auth       | JWT (jsonwebtoken) + bcryptjs           |
-| Frontend   | Next.js 14 App Router + TypeScript      |
-| Styling    | Tailwind CSS                            |
-| HTTP Client| Axios                                   |
-| Testing    | Jest + ts-jest                          |
-| Container  | Docker + Docker Compose                 |
+1. Seed a PostgreSQL database and register your first admin via the Go service.
+2. Log in via the Next.js app and verify project/task workflows.
+3. Run `docker compose up --build` when you need a reproducible local environment.
 

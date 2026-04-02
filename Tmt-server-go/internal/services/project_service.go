@@ -48,20 +48,11 @@ func (s *ProjectService) CreateProject(ctx context.Context, input CreateProjectI
 }
 
 func (s *ProjectService) ListProjects(ctx context.Context, params pagination.CursorParams, user types.JwtUser, name string) (types.CursorResult[types.Project], error) {
-	if user.Role == types.RoleAdmin {
-		return s.projects.FindMany(ctx, params, name)
-	}
-	return s.projects.FindManyForUser(ctx, user.ID, params, name)
+	return s.projects.FindMany(ctx, params, name)
 }
 
 func (s *ProjectService) GetProject(ctx context.Context, id string, user types.JwtUser) (types.Project, error) {
-	var project *types.Project
-	var err error
-	if user.Role == types.RoleAdmin {
-		project, err = s.projects.FindByIDWithCreator(ctx, id)
-	} else {
-		project, err = s.projects.FindByIDWithCreatorForUser(ctx, id, user.ID)
-	}
+	project, err := s.projects.FindByIDWithCreator(ctx, id)
 	if err != nil {
 		return types.Project{}, err
 	}

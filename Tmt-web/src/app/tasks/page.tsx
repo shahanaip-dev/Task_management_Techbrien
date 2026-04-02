@@ -1,190 +1,168 @@
 'use client';
 
-import { useState, useEffect, Suspense } from 'react';
-import { useSearchParams } from 'next/navigation';
+import { useState } from 'react';
 import toast from 'react-hot-toast';
 import AppLayout from '@/components/layout/AppLayout';
 import TaskCard from '@/components/tasks/TaskCard';
-import TaskFilters from '@/components/tasks/TaskFilters';
-import CreateTaskModal from '@/components/tasks/CreateTaskModal';
-import EditTaskModal from '@/components/tasks/EditTaskModal';
+import Input, { Select, Textarea } from '@/components/ui/Input';
 import Button from '@/components/ui/Button';
 import { useTasks } from '@/hooks/useTasks';
 import { useProjects } from '@/hooks/useProjects';
-import { useProject } from '@/hooks/useProject';
-import { usersApi } from '@/lib/api';
-import type { User, Task, TaskFilters as Filters, TaskStatus } from '@/types';
+import type { CreateTaskForm } from '@/types';
 
-function TasksPageInner() {
-  const searchParams     = useSearchParams();
-  const defaultProjectId = searchParams.get('projectId') ?? undefined;
+const EMPTY_FORM: CreateTaskForm = {
+  title: '',
+  description: '',
+  projectId: '',
+  assignedTo: '',
+  dueDate: '',
+};
 
-  const [filters,   setFilters]   = useState<Filters>({ projectId: defaultProjectId });
-  const [showModal, setShowModal] = useState(false);
-  const [editingTask, setEditingTask] = useState<Task | null>(null);
-  const [users,     setUsers]     = useState<User[]>([]);
+export default function TasksPage() {
+  const { tasks, loading, error, createTask, deleteTask } = useTasks(1000);
+  const { projects } = useProjects(1000);
 
-  const { tasks, meta, loading, error, createTask, updateTaskStatus, updateTask, deleteTask, page, goNext, goPrev } =
-    useTasks(filters, 8);
-  const { project } = useProject(defaultProjectId);
-  const { projects: allProjects } = useProjects(100, !defaultProjectId);
-  const projects = defaultProjectId ? (project ? [project] : []) : allProjects;
+  const [form, setForm] = useState<CreateTaskForm>(EMPTY_FORM);
+  const [saving, setSaving] = useState(false);
+  const [searchText, setSearchText] = useState('');
+  const [searchProjectId, setSearchProjectId] = useState('');
+  const [searchDueDate, setSearchDueDate] = useState('');
 
-  useEffect(() => {
-    usersApi.list({ limit: 6 }).then((r) => setUsers(r.data.data.data)).catch(() => {});
-  }, []);
+  const projectOptions = projects.map((p) => ({ value: p.id, label: p.name }));
+  const filteredTasks = tasks.filter((t) => {
+    const matchesText = searchText.trim()
+      ? `${t.title} ${t.description ?? ''}`.toLowerCase().includes(searchText.trim().toLowerCase())
+      : true;
+    const matchesProject = searchProjectId ? t.projectId === searchProjectId : true;
+    const matchesDue = searchDueDate
+      ? (t.dueDate ? t.dueDate.split('T')[0] === searchDueDate : false)
+      : true;
+    return matchesText && matchesProject && matchesDue;
+  });
 
-  // Task status counts (current page)
-  const counts = {
-    todo:       tasks.filter((t) => t.status === 'TODO').length,
-    inProgress: tasks.filter((t) => t.status === 'IN_PROGRESS').length,
-    done:       tasks.filter((t) => t.status === 'DONE').length,
-  };
-
-  const handleCreate = async (data: any) => {
-    try { await createTask(data); toast.success('Task created'); }
-    catch (err: any) { toast.error(err?.response?.data?.message ?? 'Failed'); throw err; }
-  };
-
-  const handleStatus = async (id: string, status: TaskStatus) => {
-    try { await updateTaskStatus(id, status); toast.success('Status updated'); }
-    catch { toast.error('Failed to update status'); }
+  const handleCreate = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!form.title.trim() || !form.projectId) {
+      return toast.error('Title and project are required');
+    }
+    setSaving(true);
+    try {
+      await createTask({
+        ...form,
+        assignedTo: undefined,
+        dueDate: form.dueDate ? new Date(form.dueDate).toISOString() : undefined,
+      });
+      toast.success('Task created');
+      setForm(EMPTY_FORM);
+    } catch (err: any) {
+      toast.error(err?.response?.data?.message ?? 'Failed to create task');
+    } finally {
+      setSaving(false);
+    }
   };
 
   const handleDelete = async (id: string) => {
     if (!confirm('Delete this task?')) return;
-    try { await deleteTask(id); toast.success('Task deleted'); }
-    catch { toast.error('Failed to delete task'); }
-  };
-
-  const handleEditSave = async (id: string, data: any) => {
-    try { await updateTask(id, data); toast.success('Task updated'); }
-    catch (err: any) { toast.error(err?.response?.data?.message ?? 'Failed to update task'); throw err; }
+    try {
+      await deleteTask(id);
+      toast.success('Task deleted');
+    } catch {
+      toast.error('Failed to delete task');
+    }
   };
 
   return (
     <AppLayout>
-      {/* Header */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-8">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-6">
         <div>
           <h1 className="font-serif text-2xl font-semibold text-[#1C1A18]">Tasks</h1>
           <p className="text-sm text-[#8A8278] mt-0.5 font-light">
-            {tasks.length ? `${tasks.length} task${tasks.length !== 1 ? 's' : ''}` : '—'}
+            {filteredTasks.length ? `${filteredTasks.length} task${filteredTasks.length !== 1 ? 's' : ''}` : '—'}
           </p>
         </div>
-        <Button onClick={() => setShowModal(true)}>+ New Task</Button>
       </div>
 
-      {/* Status summary pills */}
-      {!loading && tasks.length > 0 && (
-        <div className="flex flex-wrap items-center gap-2 mb-6">
-          <div className="bg-white border border-[#E8DDD4] rounded-lg px-4 py-2.5 flex items-center gap-2">
-            <span className="text-xs text-[#8A8278]">To Do</span>
-            <span className="font-semibold text-[#1C1A18] text-sm">{counts.todo}</span>
-          </div>
-          <div className="bg-white border border-[#E8DDD4] rounded-lg px-4 py-2.5 flex items-center gap-2">
-            <span className="text-xs text-[#8A8278]">In Progress</span>
-            <span className="font-semibold text-[#3B5BDB] text-sm">{counts.inProgress}</span>
-          </div>
-          <div className="bg-white border border-[#E8DDD4] rounded-lg px-4 py-2.5 flex items-center gap-2">
-            <span className="text-xs text-[#8A8278]">Done</span>
-            <span className="font-semibold text-[#2F9E44] text-sm">{counts.done}</span>
+      <div className="rounded-lg p-5 mb-6 bg-transparent">
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 items-end">
+          <Input
+            label="Task"
+            placeholder="Search task"
+            value={searchText}
+            onChange={(e) => setSearchText(e.target.value)}
+          />
+          <Select
+            label="Project"
+            options={projectOptions}
+            value={searchProjectId}
+            placeholder="All projects"
+            onChange={(e) => setSearchProjectId(e.target.value)}
+          />
+          <Input
+            label="Due date"
+            type="date"
+            value={searchDueDate}
+            onChange={(e) => setSearchDueDate(e.target.value)}
+          />
+        </div>
+      </div>
+
+      <form onSubmit={handleCreate} className="bg-white rounded-lg border border-[#E8DDD4] p-5 mb-8">
+        <div className="grid grid-cols-1 lg:grid-cols-5 gap-4 items-end">
+          <Input
+            label="Title"
+            required
+            placeholder="Title"
+            value={form.title}
+            onChange={(e) => setForm({ ...form, title: e.target.value })}
+          />
+          <Select
+            label="Project"
+            required
+            options={projectOptions}
+            value={form.projectId}
+            placeholder="Select a project"
+            onChange={(e) => setForm({ ...form, projectId: e.target.value })}
+          />
+          <Textarea
+            label="Description"
+            placeholder="Description"
+            value={form.description ?? ''}
+            onChange={(e) => setForm({ ...form, description: e.target.value })}
+            rows={1}
+            className="min-h-[42px]"
+          />
+          <Input
+            label="Due date"
+            type="date"
+            placeholder="Due date"
+            value={form.dueDate ?? ''}
+            onChange={(e) => setForm({ ...form, dueDate: e.target.value })}
+          />
+          <div className="flex justify-end">
+            <Button type="submit" loading={saving} className="w-full lg:w-auto">Create Task</Button>
           </div>
         </div>
-      )}
+      </form>
 
-      {/* Filters */}
-      <div className="mb-6">
-        <TaskFilters
-          filters={filters}
-          onChange={setFilters}
-          onReset={() => setFilters({})}
-          projects={projects}
-          users={users}
-        />
-      </div>
-
-      {/* Error */}
       {error && (
         <div className="bg-red-50 border border-red-200 text-red-700 rounded-lg p-4 mb-6 text-sm">{error}</div>
       )}
 
-      {/* Grid */}
       {loading ? (
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
           {Array.from({ length: 8 }).map((_, i) => (
             <div key={i} className="h-44 bg-white rounded-lg border border-[#E8DDD4] animate-pulse" />
           ))}
         </div>
-      ) : tasks.length === 0 ? (
-        <div className="text-center py-24">
-          <div className="w-14 h-14 rounded-2xl flex items-center justify-center mx-auto mb-5">
-            <svg className="w-7 h-7 text-[#7D1F1F]" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5}
-                d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2" />
-            </svg>
-          </div>
-          <h3 className="font-serif text-xl font-semibold text-[#1C1A18] mb-2">No tasks found</h3>
-          <p className="text-sm text-[#8A8278] mb-7 font-light">
-            {Object.values(filters).some(Boolean) ? 'Try adjusting your filters' : 'Create your first task'}
-          </p>
-          <Button onClick={() => setShowModal(true)}>Create Task</Button>
-        </div>
+      ) : filteredTasks.length === 0 ? (
+        <div className="text-center py-16 text-sm text-[#8A8278]">No tasks found</div>
       ) : (
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
-          {tasks.map((task) => (
-            <TaskCard
-              key={task.id}
-              task={task}
-              onStatusChange={handleStatus}
-              onDelete={handleDelete}
-              onEdit={(t) => setEditingTask(t)}
-            />
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+          {filteredTasks.map((task) => (
+            <TaskCard key={task.id} task={task} onDelete={handleDelete} />
           ))}
         </div>
       )}
-
-      {/* Pagination */}
-      {meta && (
-        <div className="mt-12">
-          <div className="flex flex-wrap justify-end items-center gap-2 px-3 py-1.5">
-            <Button variant="primary" size="sm" disabled={page === 1} onClick={goPrev}>← Previous</Button>
-            <span className="text-sm text-[#8A8278]">Page {page}</span>
-            <Button variant="primary" size="sm" disabled={!meta.hasMore} onClick={goNext}>Next →</Button>
-          </div>
-        </div>
-      )}
-
-      <CreateTaskModal
-        isOpen={showModal}
-        onClose={() => setShowModal(false)}
-        onSubmit={handleCreate}
-        projects={projects}
-        users={users}
-        defaultProjectId={filters.projectId}
-      />
-
-      <EditTaskModal
-        isOpen={!!editingTask}
-        onClose={() => setEditingTask(null)}
-        onSubmit={handleEditSave}
-        task={editingTask}
-        users={users}
-      />
     </AppLayout>
   );
 }
-
-export default function TasksPage() {
-  return <Suspense><TasksPageInner /></Suspense>;
-}
-
-
-
-
-
-
-
-
-
-

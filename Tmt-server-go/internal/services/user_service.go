@@ -139,9 +139,6 @@ func (s *UserService) DeleteUser(ctx context.Context, id string) error {
 	if user == nil {
 		return appErrors.AppError{StatusCode: 404, Message: "User not found"}
 	}
-	if user.Email == "admin@tmt.com" || user.Name == "System Admin" {
-		return appErrors.AppError{StatusCode: 403, Message: "System admin cannot be deleted"}
-	}
 	return s.users.Delete(ctx, id)
 }
 

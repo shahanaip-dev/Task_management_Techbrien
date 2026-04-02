@@ -58,16 +58,6 @@ func (s *TaskService) CreateTask(ctx context.Context, input CreateTaskInput, use
 		return types.Task{}, appErrors.AppError{StatusCode: 404, Message: "Project not found"}
 	}
 
-	if user.Role == types.RoleEmployee {
-		isMember, err := s.projects.IsMember(ctx, input.ProjectID, user.ID)
-		if err != nil {
-			return types.Task{}, err
-		}
-		if !isMember {
-			return types.Task{}, appErrors.AppError{StatusCode: 403, Message: "You are not a member of this project"}
-		}
-	}
-
 	finalAssigned := input.AssignedTo
 	if finalAssigned == nil || strings.TrimSpace(*finalAssigned) == "" {
 		finalAssigned = &user.ID
@@ -108,9 +98,6 @@ func (s *TaskService) CreateTask(ctx context.Context, input CreateTaskInput, use
 }
 
 func (s *TaskService) ListTasks(ctx context.Context, params pagination.CursorParams, user types.JwtUser, filters types.TaskFilters) (types.CursorResult[types.Task], error) {
-	if user.Role == types.RoleEmployee {
-		filters.AssignedTo = user.ID
-	}
 	return s.tasks.FindMany(ctx, filters, params)
 }
 
@@ -121,9 +108,6 @@ func (s *TaskService) GetTask(ctx context.Context, id string, user types.JwtUser
 	}
 	if task == nil {
 		return types.Task{}, appErrors.AppError{StatusCode: 404, Message: "Task not found"}
-	}
-	if user.Role == types.RoleEmployee && (task.AssignedTo == nil || *task.AssignedTo != user.ID) {
-		return types.Task{}, appErrors.AppError{StatusCode: 403, Message: "You do not have access to this task"}
 	}
 	return *task, nil
 }

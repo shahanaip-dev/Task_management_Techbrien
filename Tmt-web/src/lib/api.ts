@@ -42,8 +42,8 @@ apiClient.interceptors.response.use(
 // ── Typed API functions ────────────────────────────────────────────────────
 import type {
   LoginPayload, AuthResponse, User, Project, Task,
-  PaginatedData, CreateProjectForm, CreateTaskForm, TaskFilters,
-  CreateUserForm, UpdateUserForm, ChangePasswordForm, DashboardSummary,
+  PaginatedData, CreateProjectForm, CreateTaskForm,
+  CreateUserForm, UpdateUserForm, ChangePasswordForm,
 } from '../types';
 
 // Auth
@@ -52,12 +52,6 @@ export const authApi = {
     apiClient.post<{ data: AuthResponse }>('/auth/login', data),
   me: () =>
     apiClient.get<{ data: User }>('/auth/me'),
-};
-
-// Dashboard
-export const dashboardApi = {
-  summary: () =>
-    apiClient.get<{ data: DashboardSummary }>('/dashboard/summary'),
 };
 
 // Users
@@ -92,10 +86,8 @@ export const projectsApi = {
 
 // Tasks
 export const tasksApi = {
-  list: (filters?: TaskFilters & { limit?: number; cursor?: string }) =>
-    apiClient.get<{ data: PaginatedData<Task> }>('/tasks', {
-      params: filters,
-    }),
+  list: (params?: { limit?: number }) =>
+    apiClient.get<{ data: PaginatedData<Task> }>('/tasks', { params }),
   getOne: (id: string) =>
     apiClient.get<{ data: Task }>(`/tasks/${id}`),
   create: (data: CreateTaskForm) =>

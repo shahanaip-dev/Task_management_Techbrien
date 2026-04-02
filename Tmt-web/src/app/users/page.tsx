@@ -1,19 +1,13 @@
 'use client';
 
-import { useMemo, useState } from 'react';
+import { useState } from 'react';
 import toast from 'react-hot-toast';
 import AppLayout from '@/components/layout/AppLayout';
 import Button from '@/components/ui/Button';
-import Modal from '@/components/ui/Modal';
 import Input from '@/components/ui/Input';
-import { useAuth } from '@/context/AuthContext';
 import { useUsers } from '@/hooks/useUsers';
+import { useAuth } from '@/context/AuthContext';
 import type { CreateUserForm, UpdateUserForm, User } from '@/types';
-
-const ROLE_LABELS: Record<string, string> = {
-  ADMIN: 'Admin',
-  EMPLOYEE: 'Employee',
-};
 
 function formatDate(value?: string) {
   if (!value) return '—';
@@ -22,102 +16,14 @@ function formatDate(value?: string) {
 }
 
 export default function UsersPage() {
-  const { user: currentUser, isAdmin } = useAuth();
-  const { users, meta, loading, error, createUser, updateUser, deleteUser, page, goNext, goPrev } = useUsers(8);
+  const { isAdmin } = useAuth();
+  const { users, loading, error, createUser, updateUser, deleteUser } = useUsers(1000);
+  const [editingUser, setEditingUser] = useState<User | null>(null);
+  const [form, setForm] = useState<CreateUserForm>({ name: '', email: '', password: '' });
+  const [saving, setSaving] = useState(false);
+  const teamMembers = users.filter((u) => u.role !== 'ADMIN');
 
-  const [showCreate, setShowCreate] = useState(false);
-  const [showEdit,   setShowEdit]   = useState(false);
-  const [editing,    setEditing]    = useState<User | null>(null);
-  const [showCreatePwd, setShowCreatePwd] = useState(false);
-  const [showEditPwd, setShowEditPwd] = useState(false);
-
-  const [createForm, setCreateForm] = useState<CreateUserForm>({
-    name: '', email: '', password: '',
-  });
-  const [editForm, setEditForm] = useState<UpdateUserForm>({
-    name: '', email: '', password: '',
-  });
-
-  const totalUsers = users.length;
-  const isSelf = (u: User) => currentUser?.id === u.id;
-  const isSystemAdmin = (u: User) => u.email === 'admin@tmt.com' || u.name === 'System Admin';
-
-  const resetCreate = () => {
-    setCreateForm({ name: '', email: '', password: '' });
-    setShowCreatePwd(false);
-  };
-  const resetEdit = () => {
-    setEditForm({ name: '', email: '', password: '' });
-    setShowEditPwd(false);
-  };
-
-  const openEdit = (u: User) => {
-    setEditing(u);
-    setEditForm({ name: u.name, email: u.email });
-    setShowEditPwd(false);
-    setShowEdit(true);
-  };
-
-  const handleCreate = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!createForm.name.trim() || !createForm.email.trim() || !createForm.password) {
-      return toast.error('Name, email, and password are required');
-    }
-    try {
-      await createUser({
-        ...createForm,
-        name:  createForm.name.trim(),
-        email: createForm.email.trim(),
-      });
-      toast.success('User created');
-      resetCreate();
-      setShowCreate(false);
-    } catch (err: any) {
-      toast.error(err?.response?.data?.message ?? 'Failed to create user');
-    }
-  };
-
-  const handleUpdate = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!editing) return;
-
-    const payload: UpdateUserForm = {};
-    const name  = editForm.name?.trim();
-    const email = editForm.email?.trim();
-
-    if (name && name !== editing.name) payload.name = name;
-    if (email && email !== editing.email) payload.email = email;
-    if (editForm.password) payload.password = editForm.password;
-    if (Object.keys(payload).length === 0) {
-      return toast.error('No changes to save');
-    }
-
-    try {
-      await updateUser(editing.id, payload);
-      toast.success('User updated');
-      resetEdit();
-      setShowEdit(false);
-      setEditing(null);
-    } catch (err: any) {
-      toast.error(err?.response?.data?.message ?? 'Failed to update user');
-    }
-  };
-
-  const handleDelete = async (u: User) => {
-    if (isSelf(u)) return toast.error('You cannot delete your own account');
-    if (isSystemAdmin(u)) return toast.error('System admin cannot be deleted');
-    if (!confirm(`Delete ${u.name}? This cannot be undone.`)) return;
-    try {
-      await deleteUser(u.id);
-      toast.success('User deleted');
-    } catch (err: any) {
-      toast.error(err?.response?.data?.message ?? 'Failed to delete user');
-    }
-  };
-
-  const canRender = useMemo(() => isAdmin, [isAdmin]);
-
-  if (!canRender) {
+  if (!isAdmin) {
     return (
       <AppLayout>
         <div className="bg-red-50 border border-red-200 text-red-700 rounded-lg p-4 text-sm">
@@ -127,32 +33,97 @@ export default function UsersPage() {
     );
   }
 
+  const resetForm = () => {
+    setEditingUser(null);
+    setForm({ name: '', email: '', password: '' });
+  };
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    const name = form.name.trim();
+    const email = form.email.trim();
+    if (!name || !email) {
+      return toast.error('Name and email are required');
+    }
+
+    if (!editingUser && !form.password.trim()) {
+      return toast.error('Password is required');
+    }
+
+    setSaving(true);
+    try {
+      if (editingUser) {
+        const payload: UpdateUserForm = { name, email };
+        if (form.password.trim()) {
+          payload.password = form.password;
+        }
+        await updateUser(editingUser.id, payload);
+        toast.success('User updated');
+      } else {
+        await createUser({ name, email, password: form.password });
+        toast.success('User created');
+      }
+      resetForm();
+    } catch (err: any) {
+      toast.error(err?.response?.data?.message ?? 'Failed to save user');
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  const startEdit = (user: User) => {
+    setEditingUser(user);
+    setForm({ name: user.name, email: user.email, password: '' });
+  };
+
+  const handleDelete = async (u: User) => {
+    if (!confirm(`Delete ${u.name}? This cannot be undone.`)) return;
+    try {
+      await deleteUser(u.id);
+      toast.success('User deleted');
+    } catch (err: any) {
+      toast.error(err?.response?.data?.message ?? 'Failed to delete user');
+    }
+  };
+
   return (
     <AppLayout>
-      {/* Header */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-8">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-6">
         <div>
           <h1 className="font-serif text-2xl font-semibold text-[#1C1A18]">Team</h1>
           <p className="text-sm text-[#8A8278] mt-0.5 font-light">
-            {users.length ? `${totalUsers} user${totalUsers !== 1 ? 's' : ''}` : '—'}
+            {teamMembers.length ? `${teamMembers.length} user${teamMembers.length !== 1 ? 's' : ''}` : '—'}
           </p>
         </div>
-        <Button onClick={() => setShowCreate(true)}>+ New User</Button>
       </div>
 
-      {/* Error */}
+      <form onSubmit={handleSubmit} className="bg-white rounded-lg border border-[#E8DDD4] p-5 mb-8">
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+          <Input label="Full name" placeholder="Full name" required value={form.name} onChange={(e) => setForm({ ...form, name: e.target.value })} />
+          <Input label="Email" placeholder="Email" type="email" required value={form.email} onChange={(e) => setForm({ ...form, email: e.target.value })} />
+          <Input label="Password" placeholder="Password" type="password" required={!editingUser} value={form.password} onChange={(e) => setForm({ ...form, password: e.target.value })} />
+        </div>
+        <div className="flex justify-end mt-4 gap-3">
+          {editingUser && (
+            <Button type="button" variant="ghost" size="sm" onClick={resetForm}>
+              Cancel
+            </Button>
+          )}
+          <Button type="submit" loading={saving}>
+            {editingUser ? 'Update User' : 'Create User'}
+          </Button>
+        </div>
+      </form>
+
       {error && (
         <div className="bg-red-50 border border-red-200 text-red-700 rounded-lg p-4 mb-6 text-sm">{error}</div>
       )}
 
-      {/* Users table */}
       <div className="bg-white rounded-lg border border-[#E8DDD4] overflow-hidden">
-        {/* Desktop table header - hidden on mobile */}
         <div className="hidden md:grid grid-cols-12 gap-2 px-5 py-3 bg-[#FAF7F2] text-[11px] uppercase tracking-wider text-[#8A8278] font-semibold">
           <div className="col-span-3">Name</div>
-          <div className="col-span-3">Email</div>
-          <div className="col-span-2">Role</div>
-          <div className="col-span-2">Created</div>
+          <div className="col-span-4">Email</div>
+          <div className="col-span-3">Created</div>
           <div className="col-span-2 text-right">Actions</div>
         </div>
 
@@ -162,27 +133,24 @@ export default function UsersPage() {
               <div key={i} className="h-10 bg-[#FAF7F2] rounded animate-pulse" />
             ))}
           </div>
-        ) : users.length === 0 ? (
+        ) : teamMembers.length === 0 ? (
           <div className="p-10 text-center text-sm text-[#8A8278]">No users found</div>
         ) : (
-          users.map((u) => (
+          teamMembers.map((u) => (
             <div key={u.id} className="border-t border-[#E8DDD4] text-sm">
-              {/* Desktop row */}
               <div className="hidden md:grid grid-cols-12 gap-2 px-5 py-4 items-center">
                 <div className="col-span-3 font-medium text-[#1C1A18]">{u.name}</div>
-                <div className="col-span-3 text-[#6B6860] truncate">{u.email}</div>
-                <div className="col-span-2 text-[#6B6860]">{ROLE_LABELS[u.role] ?? u.role}</div>
-                <div className="col-span-2 text-[#6B6860]">
-                  {formatDate(u.createdAt)}
-                </div>
-                <div className="col-span-2 flex justify-end gap-2">
-                  <Button size="sm" variant="secondary" onClick={() => openEdit(u)}>Edit</Button>
-                  <Button size="sm" variant="danger" disabled={isSelf(u) || isSystemAdmin(u)} onClick={() => handleDelete(u)}>Delete</Button>
+                <div className="col-span-4 text-[#6B6860] truncate">{u.email}</div>
+                <div className="col-span-3 text-[#6B6860]">{formatDate(u.createdAt)}</div>
+                <div className="col-span-2 flex justify-end">
+                  <div className="flex items-center gap-2">
+                    <Button size="sm" variant="ghost" onClick={() => startEdit(u)}>Edit</Button>
+                    <Button size="sm" variant="danger" onClick={() => handleDelete(u)}>Delete</Button>
+                  </div>
                 </div>
               </div>
-              {/* Mobile card */}
               <div className="md:hidden px-4 py-4">
-                <div className="flex items-center gap-2 mb-3">
+                <div className="flex items-center gap-2 mb-2">
                   <div className="w-9 h-9 rounded-full flex items-center justify-center text-[#7D1F1F] text-sm font-semibold flex-shrink-0">
                     {u.name.charAt(0).toUpperCase()}
                   </div>
@@ -192,13 +160,10 @@ export default function UsersPage() {
                   </div>
                 </div>
                 <div className="flex items-center justify-between">
-                  <div className="flex items-center gap-2 text-xs text-[#8A8278]">
-                    <span className="inline-block px-2 py-0.5 bg-[#FAF7F2] rounded text-[10px] font-semibold uppercase tracking-wider">{ROLE_LABELS[u.role] ?? u.role}</span>
-                    <span>{formatDate(u.createdAt)}</span>
-                  </div>
-                  <div className="flex gap-2">
-                    <Button size="sm" variant="secondary" onClick={() => openEdit(u)}>Edit</Button>
-                    <Button size="sm" variant="danger" disabled={isSelf(u) || isSystemAdmin(u)} onClick={() => handleDelete(u)}>Delete</Button>
+                  <div className="text-xs text-[#8A8278]">{formatDate(u.createdAt)}</div>
+                  <div className="flex items-center gap-2">
+                    <Button size="sm" variant="ghost" onClick={() => startEdit(u)}>Edit</Button>
+                    <Button size="sm" variant="danger" onClick={() => handleDelete(u)}>Delete</Button>
                   </div>
                 </div>
               </div>
@@ -206,106 +171,6 @@ export default function UsersPage() {
           ))
         )}
       </div>
-
-      {/* Pagination */}
-      {meta && (
-        <div className="mt-12">
-          <div className="flex flex-wrap justify-end items-center gap-2 px-3 py-1.5">
-            <Button variant="primary" size="sm" disabled={page === 1} onClick={goPrev}>← Previous</Button>
-            <span className="text-sm text-[#8A8278]">Page {page}</span>
-            <Button variant="primary" size="sm" disabled={!meta.hasMore} onClick={goNext}>Next →</Button>
-          </div>
-        </div>
-      )}
-
-      {/* Create modal */}
-      <Modal isOpen={showCreate} onClose={() => setShowCreate(false)} title="New User">
-        <form onSubmit={handleCreate} className="flex flex-col gap-4">
-          <Input label="Full name" required value={createForm.name}
-            onChange={(e) => setCreateForm({ ...createForm, name: e.target.value })} />
-          <Input label="Email" type="email" required value={createForm.email}
-            onChange={(e) => setCreateForm({ ...createForm, email: e.target.value })} />
-          <Input
-            label="Password"
-            type={showCreatePwd ? 'text' : 'password'}
-            required
-            value={createForm.password}
-            onChange={(e) => setCreateForm({ ...createForm, password: e.target.value })}
-            rightIcon={
-              <button
-                type="button"
-                onClick={() => setShowCreatePwd((v) => !v)}
-                className="text-[#8A8278] hover:text-[#1C1A18]"
-                aria-label={showCreatePwd ? 'Hide password' : 'Show password'}
-              >
-                {showCreatePwd ? (
-                  <svg className="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 3l18 18M10.9 10.9a3 3 0 104.24 4.24M9.88 4.24A10.94 10.94 0 0112 4c5.05 0 9.27 3.11 11 7.5a12.98 12.98 0 01-4.25 5.4M6.62 6.62A12.98 12.98 0 001 11.5 11.18 11.18 0 005.3 17" />
-                  </svg>
-                ) : (
-                  <svg className="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M1 12s4-7 11-7 11 7 11 7-4 7-11 7S1 12 1 12z" />
-                    <circle cx="12" cy="12" r="3" strokeWidth={2} />
-                  </svg>
-                )}
-              </button>
-            }
-          />
-          <div className="flex justify-end gap-2 pt-3 border-t border-[#E8DDD4]">
-            <Button variant="secondary" type="button" onClick={() => setShowCreate(false)}>Cancel</Button>
-            <Button type="submit">Create User</Button>
-          </div>
-        </form>
-      </Modal>
-
-      {/* Edit modal */}
-      <Modal isOpen={showEdit} onClose={() => setShowEdit(false)} title="Edit User">
-        <form onSubmit={handleUpdate} className="flex flex-col gap-4">
-          <Input label="Full name" value={editForm.name ?? ''}
-            onChange={(e) => setEditForm({ ...editForm, name: e.target.value })} />
-          <Input label="Email" type="email" value={editForm.email ?? ''}
-            onChange={(e) => setEditForm({ ...editForm, email: e.target.value })} />
-          <Input
-            label="New password"
-            type={showEditPwd ? 'text' : 'password'}
-            placeholder="Leave blank to keep current"
-            value={editForm.password ?? ''}
-            onChange={(e) => setEditForm({ ...editForm, password: e.target.value })}
-            rightIcon={
-              <button
-                type="button"
-                onClick={() => setShowEditPwd((v) => !v)}
-                className="text-[#8A8278] hover:text-[#1C1A18]"
-                aria-label={showEditPwd ? 'Hide password' : 'Show password'}
-              >
-                {showEditPwd ? (
-                  <svg className="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 3l18 18M10.9 10.9a3 3 0 104.24 4.24M9.88 4.24A10.94 10.94 0 0112 4c5.05 0 9.27 3.11 11 7.5a12.98 12.98 0 01-4.25 5.4M6.62 6.62A12.98 12.98 0 001 11.5 11.18 11.18 0 005.3 17" />
-                  </svg>
-                ) : (
-                  <svg className="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M1 12s4-7 11-7 11 7 11 7-4 7-11 7S1 12 1 12z" />
-                    <circle cx="12" cy="12" r="3" strokeWidth={2} />
-                  </svg>
-                )}
-              </button>
-            }
-          />
-          <div className="flex justify-end gap-2 pt-3 border-t border-[#E8DDD4]">
-            <Button variant="secondary" type="button" onClick={() => setShowEdit(false)}>Cancel</Button>
-            <Button type="submit">Save Changes</Button>
-          </div>
-        </form>
-      </Modal>
     </AppLayout>
   );
 }
-
-
-
-
-
-
-
-
-

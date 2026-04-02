@@ -36,7 +36,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     setToken(token);
     setUser(authUser);
     setUserState(authUser);
-    router.push('/dashboard');
+    router.push('/projects');
   }, [router]);
 
   const logout = useCallback(() => {

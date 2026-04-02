@@ -3,12 +3,12 @@ package handlers
 import (
 	"encoding/json"
 	"net/http"
-	"strings"
 
 	"tmt-server-go/internal/http/middleware"
 	"tmt-server-go/internal/pagination"
 	"tmt-server-go/internal/response"
 	"tmt-server-go/internal/services"
+	"tmt-server-go/internal/types"
 
 	"github.com/go-chi/chi/v5"
 )
@@ -52,12 +52,8 @@ func (h *ProjectHandler) ListProjects(w http.ResponseWriter, r *http.Request) er
 
 	q := r.URL.Query()
 	params := pagination.ParseCursorParams(q.Get("limit"), q.Get("cursor"))
-	name := ""
-	if raw := strings.TrimSpace(q.Get("name")); raw != "" {
-		name = raw
-	}
 
-	result, err := h.projects.ListProjects(r.Context(), params, user, name)
+	result, err := h.projects.ListProjects(r.Context(), params, user, "")
 	if err != nil {
 		return err
 	}
@@ -84,6 +80,16 @@ func (h *ProjectHandler) GetProject(w http.ResponseWriter, r *http.Request) erro
 }
 
 func (h *ProjectHandler) UpdateProject(w http.ResponseWriter, r *http.Request) error {
+	user, ok := middleware.GetUser(r)
+	if !ok {
+		response.SendError(w, "Unauthenticated", http.StatusUnauthorized, nil)
+		return nil
+	}
+	if user.Role != types.RoleAdmin {
+		response.SendError(w, "Forbidden: insufficient permissions", http.StatusForbidden, nil)
+		return nil
+	}
+
 	var input services.UpdateProjectInput
 	if err := json.NewDecoder(r.Body).Decode(&input); err != nil {
 		response.SendError(w, "Invalid JSON", http.StatusBadRequest, nil)
@@ -101,6 +107,16 @@ func (h *ProjectHandler) UpdateProject(w http.ResponseWriter, r *http.Request) e
 }
 
 func (h *ProjectHandler) DeleteProject(w http.ResponseWriter, r *http.Request) error {
+	user, ok := middleware.GetUser(r)
+	if !ok {
+		response.SendError(w, "Unauthenticated", http.StatusUnauthorized, nil)
+		return nil
+	}
+	if user.Role != types.RoleAdmin {
+		response.SendError(w, "Forbidden: insufficient permissions", http.StatusForbidden, nil)
+		return nil
+	}
+
 	id := chi.URLParam(r, "id")
 	if err := h.projects.DeleteProject(r.Context(), id); err != nil {
 		return err

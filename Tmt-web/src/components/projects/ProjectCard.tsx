@@ -2,16 +2,13 @@
 
 import Link from 'next/link';
 import type { Project } from '@/types';
-import Button from '@/components/ui/Button';
-
 interface ProjectCardProps {
   project:  Project;
   onDelete: (id: string) => void;
-  onEdit:   (project: Project) => void;
-  isAdmin:  boolean;
+  isAdmin?: boolean;
 }
 
-export default function ProjectCard({ project, onDelete, onEdit, isAdmin }: ProjectCardProps) {
+export default function ProjectCard({ project, onDelete, isAdmin = false }: ProjectCardProps) {
   const taskCount = project.taskCount ?? 0;
 
   return (
@@ -21,30 +18,43 @@ export default function ProjectCard({ project, onDelete, onEdit, isAdmin }: Proj
         <h3 className="font-serif font-semibold text-[#1C1A18] text-base leading-snug line-clamp-1">
           {project.name}
         </h3>
-        {isAdmin && (
-          <div className="flex items-center gap-1 opacity-100 md:opacity-0 md:group-hover:opacity-100 transition-all duration-200">
-            <button
-              onClick={() => onEdit(project)}
-              className="p-1 text-[#C4B8AD] hover:text-[#7D1F1F] rounded"
-              title="Edit project"
-            >
-              <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2}
-                  d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
-              </svg>
-            </button>
-            <button
-              onClick={() => onDelete(project.id)}
-              className="p-1 text-[#C4B8AD] hover:text-red-500 rounded"
-              title="Delete project"
-            >
-              <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2}
-                  d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
-              </svg>
-            </button>
-          </div>
-        )}
+        <div className="flex items-center gap-2">
+          <Link
+            href={`/projects/${project.id}`}
+            className="p-1 text-[#C4B8AD] hover:text-[#7D1F1F] rounded"
+            title="View project"
+          >
+            <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2}
+                d="M1.5 12s4.5-7 10.5-7 10.5 7 10.5 7-4.5 7-10.5 7S1.5 12 1.5 12z" />
+              <circle cx="12" cy="12" r="3" strokeWidth={2} />
+            </svg>
+          </Link>
+          {isAdmin && (
+            <>
+              <Link
+                href={`/projects/${project.id}`}
+                className="p-1 text-[#C4B8AD] hover:text-[#7D1F1F] rounded"
+                title="Edit project"
+              >
+                <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2}
+                    d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
+                </svg>
+              </Link>
+              <button
+                onClick={() => onDelete(project.id)}
+                className="p-1 text-[#C4B8AD] hover:text-red-500 rounded"
+                title="Delete project"
+              >
+                <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2}
+                    d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                </svg>
+              </button>
+            </>
+          )}
+        </div>
       </div>
 
       <p className="text-sm text-[#8A8278] line-clamp-2 mb-5 min-h-[2.5rem] leading-relaxed font-light">
@@ -60,10 +70,8 @@ export default function ProjectCard({ project, onDelete, onEdit, isAdmin }: Proj
           </svg>
           <span>{taskCount} task{taskCount !== 1 ? 's' : ''}</span>
         </div>
-        <Link href={`/tasks?projectId=${project.id}`}>
-          <Button variant="ghost" size="sm" className="text-[#7D1F1F] hover:text-[#5C1616]">
-            View Tasks →
-          </Button>
+        <Link href={`/tasks`}>
+          <span className="text-sm text-[#7D1F1F]">View Tasks →</span>
         </Link>
       </div>
     </div>

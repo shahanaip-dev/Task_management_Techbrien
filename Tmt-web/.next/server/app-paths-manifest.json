@@ -1,7 +1,8 @@
 {
-  "/dashboard/page": "app/dashboard/page.js",
-  "/login/page": "app/login/page.js",
+  "/not-found": "app/not-found.js",
+  "/projects/[id]/page": "app/projects/[id]/page.js",
+  "/tasks/[id]/page": "app/tasks/[id]/page.js",
   "/projects/page": "app/projects/page.js",
-  "/users/page": "app/users/page.js",
-  "/tasks/page": "app/tasks/page.js"
+  "/login/page": "app/login/page.js",
+  "/users/page": "app/users/page.js"
 }

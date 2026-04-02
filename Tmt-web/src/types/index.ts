@@ -52,22 +52,6 @@ export interface PaginatedData<T> {
   };
 }
 
-export interface DashboardSummary {
-  totals: {
-    tasks: number;
-    projects: number;
-    tasksDone: number;
-    tasksInProgress: number;
-    teamMembers?: number;
-  };
-  statusCounts: {
-    TODO: number;
-    IN_PROGRESS: number;
-    DONE: number;
-  };
-  projectTaskCounts: Array<{ name: string; value: number }>;
-}
-
 // ── Auth ──────────────────────────────────────────────────────────────────
 export interface LoginPayload { email: string; password: string; }
 export interface AuthResponse  { token: string; user: User; }
@@ -101,12 +85,4 @@ export interface UpdateTaskForm {
   status?:      TaskStatus;
   assignedTo?:  string | null;
   dueDate?:     string | null;
-}
-export interface TaskFilters {
-  projectId?:  string;
-  status?:     TaskStatus | '';
-  assignedTo?: string;
-  title?:      string;
-  description?: string;
-  dueDate?:    string;
 }

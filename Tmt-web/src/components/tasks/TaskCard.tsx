@@ -1,23 +1,15 @@
 'use client';
 
-import type { Task, TaskStatus } from '@/types';
+import Link from 'next/link';
+import type { Task } from '@/types';
 import { StatusBadge } from '@/components/ui/Badge';
-import { Select } from '@/components/ui/Input';
 
 interface TaskCardProps {
   task:           Task;
-  onStatusChange: (id: string, status: TaskStatus) => void;
   onDelete:       (id: string) => void;
-  onEdit:         (task: Task) => void;
 }
 
-const STATUS_OPTIONS = [
-  { value: 'TODO',        label: 'To Do'       },
-  { value: 'IN_PROGRESS', label: 'In Progress' },
-  { value: 'DONE',        label: 'Done'        },
-];
-
-export default function TaskCard({ task, onStatusChange, onDelete, onEdit }: TaskCardProps) {
+export default function TaskCard({ task, onDelete }: TaskCardProps) {
   const dueDate = task.dueDate
     ? new Date(task.dueDate).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })
     : null;
@@ -29,15 +21,27 @@ export default function TaskCard({ task, onStatusChange, onDelete, onEdit }: Tas
       <div className="flex items-start justify-between gap-2 mb-2">
         <h4 className="font-medium text-[#1C1A18] text-sm leading-snug">{task.title}</h4>
         <div className="flex items-center gap-1 opacity-100 md:opacity-0 md:group-hover:opacity-100 transition-all duration-200">
-          <button
-            onClick={() => onEdit(task)}
+          <Link
+            href={`/tasks/${task.id}`}
+            className="flex-shrink-0 p-1 text-[#8A8278] hover:text-[#1C1A18] rounded"
+            title="View task"
+          >
+            <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2}
+                d="M1.5 12s4.5-7 10.5-7 10.5 7 10.5 7-4.5 7-10.5 7S1.5 12 1.5 12z" />
+              <circle cx="12" cy="12" r="3" strokeWidth={2} />
+            </svg>
+          </Link>
+          <Link
+            href={`/tasks/${task.id}`}
             className="flex-shrink-0 p-1 text-[#8A8278] hover:text-[#1C1A18] rounded"
             title="Edit task"
           >
             <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15.232 5.232a2.828 2.828 0 014 4L7 21H3v-4L15.232 5.232z" />
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2}
+                d="M15.232 5.232a2.828 2.828 0 014 4L7 21H3v-4L15.232 5.232z" />
             </svg>
-          </button>
+          </Link>
           <button
             onClick={() => onDelete(task.id)}
             className="flex-shrink-0 p-1 text-[#C4B8AD] hover:text-red-500 rounded"
@@ -60,16 +64,6 @@ export default function TaskCard({ task, onStatusChange, onDelete, onEdit }: Tas
           {task.project.name}
         </span>
       )}
-
-      {/* Status selector */}
-      <div className="mb-4">
-        <Select
-          options={STATUS_OPTIONS}
-          value={task.status}
-          onChange={(e) => onStatusChange(task.id, e.target.value as TaskStatus)}
-          className="text-xs py-1.5"
-        />
-      </div>
 
       {/* Footer row */}
       <div className="flex items-center justify-between flex-wrap gap-2">

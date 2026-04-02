@@ -9,7 +9,6 @@ import (
 	"tmt-server-go/internal/http/middleware"
 	"tmt-server-go/internal/repositories"
 	"tmt-server-go/internal/services"
-	"tmt-server-go/internal/types"
 
 	"github.com/go-chi/chi/v5"
 	chimw "github.com/go-chi/chi/v5/middleware"
@@ -47,18 +46,13 @@ func NewRouter(cfg config.Config, users *repositories.UserRepository, db *pgxpoo
 		userSvc := services.NewUserService(users)
 		userHandler := handlers.NewUserHandler(userSvc)
 		api.Route("/users", func(ur chi.Router) {
-			ur.With(middleware.Authenticate(cfg.JWT.Secret)).Patch("/me/password", middleware.Wrap(userHandler.ChangePassword))
-
-			ur.Group(func(admin chi.Router) {
-				admin.Use(middleware.Authenticate(cfg.JWT.Secret))
-				admin.Use(middleware.Authorize(types.RoleAdmin))
-
-				admin.Post("/", middleware.Wrap(userHandler.CreateUser))
-				admin.Get("/", middleware.Wrap(userHandler.ListUsers))
-				admin.Get("/{id}", middleware.Wrap(userHandler.GetUser))
-				admin.Put("/{id}", middleware.Wrap(userHandler.UpdateUser))
-				admin.Delete("/{id}", middleware.Wrap(userHandler.DeleteUser))
-			})
+			ur.Use(middleware.Authenticate(cfg.JWT.Secret))
+			ur.Post("/", middleware.Wrap(userHandler.CreateUser))
+			ur.Get("/", middleware.Wrap(userHandler.ListUsers))
+			ur.Get("/{id}", middleware.Wrap(userHandler.GetUser))
+			ur.Put("/{id}", middleware.Wrap(userHandler.UpdateUser))
+			ur.Delete("/{id}", middleware.Wrap(userHandler.DeleteUser))
+			ur.Patch("/me/password", middleware.Wrap(userHandler.ChangePassword))
 		})
 
 		// Projects
@@ -67,11 +61,11 @@ func NewRouter(cfg config.Config, users *repositories.UserRepository, db *pgxpoo
 		projectHandler := handlers.NewProjectHandler(projectSvc)
 		api.Route("/projects", func(pr chi.Router) {
 			pr.Use(middleware.Authenticate(cfg.JWT.Secret))
-			pr.With(middleware.Authorize(types.RoleAdmin)).Post("/", middleware.Wrap(projectHandler.CreateProject))
+			pr.Post("/", middleware.Wrap(projectHandler.CreateProject))
 			pr.Get("/", middleware.Wrap(projectHandler.ListProjects))
 			pr.Get("/{id}", middleware.Wrap(projectHandler.GetProject))
-			pr.With(middleware.Authorize(types.RoleAdmin)).Put("/{id}", middleware.Wrap(projectHandler.UpdateProject))
-			pr.With(middleware.Authorize(types.RoleAdmin)).Delete("/{id}", middleware.Wrap(projectHandler.DeleteProject))
+			pr.Put("/{id}", middleware.Wrap(projectHandler.UpdateProject))
+			pr.Delete("/{id}", middleware.Wrap(projectHandler.DeleteProject))
 		})
 
 		// Tasks
@@ -86,14 +80,6 @@ func NewRouter(cfg config.Config, users *repositories.UserRepository, db *pgxpoo
 			tr.Put("/{id}", middleware.Wrap(taskHandler.UpdateTask))
 			tr.Patch("/{id}/assign", middleware.Wrap(taskHandler.AssignTask))
 			tr.Delete("/{id}", middleware.Wrap(taskHandler.DeleteTask))
-		})
-
-		// Dashboard
-		dashboardSvc := services.NewDashboardService(db)
-		dashboardHandler := handlers.NewDashboardHandler(dashboardSvc)
-		api.Route("/dashboard", func(dr chi.Router) {
-			dr.Use(middleware.Authenticate(cfg.JWT.Secret))
-			dr.Get("/summary", middleware.Wrap(dashboardHandler.Summary))
 		})
 
 		// Health
