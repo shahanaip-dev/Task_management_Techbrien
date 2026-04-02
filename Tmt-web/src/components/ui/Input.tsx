@@ -40,7 +40,7 @@ export default function Input({ label, error, hint, leftIcon, rightIcon, id, cla
           </span>
         )}
         {rightIcon && (
-          <span className="absolute right-3 top-1/2 -translate-y-1/2 text-[#8A8278] z-10 flex items-center justify-center">
+          <span className="absolute right-3 top-1/2 -translate-y-1/2 text-[#8A8278] z-10 flex items-center justify-center pointer-events-auto">
             {rightIcon}
           </span>
         )}

@@ -1,5 +1,6 @@
 import { Pool } from 'pg';
-import { Task, TaskStatus, TaskFilters, PaginationParams } from '../types';
+import { Task, TaskStatus, TaskFilters, CursorParams, CursorResult } from '../types';
+import { buildCursorResult, decodeCursor, encodeCursor } from '../utils/pagination';
 
 export class TaskRepository {
   constructor(private readonly db: Pool) {}
@@ -91,9 +92,8 @@ export class TaskRepository {
 
   async findMany(
     filters: TaskFilters,
-    { limit, offset }: PaginationParams
-  ): Promise<[Task[], number]> {
-    // Build WHERE clause dynamically
+    { limit, cursor }: CursorParams
+  ): Promise<CursorResult<Task>> {
     const conditions: string[] = [];
     const values: unknown[] = [];
     let idx = 1;
@@ -103,7 +103,17 @@ export class TaskRepository {
     if (filters.assignedTo) { conditions.push(`t.assigned_to  = $${idx++}`); values.push(filters.assignedTo); }
     if (filters.title)      { conditions.push(`t.title ILIKE $${idx++}`); values.push(`%${filters.title}%`); }
     if (filters.description) { conditions.push(`t.description ILIKE $${idx++}`); values.push(`%${filters.description}%`); }
-    if (filters.dueDate)    { conditions.push(`t.due_date::date = $${idx++}`); values.push(filters.dueDate); }
+    if (filters.dueDate)    {
+      conditions.push(`t.due_date >= $${idx} AND t.due_date < ($${idx}::date + interval '1 day')`);
+      values.push(filters.dueDate);
+      idx += 1;
+    }
+
+    const decoded = decodeCursor(cursor);
+    if (decoded) {
+      conditions.push(`(t.created_at, t.id) < ($${idx++}, $${idx++})`);
+      values.push(decoded.createdAt, decoded.id);
+    }
 
     const where = conditions.length ? `WHERE ${conditions.join(' AND ')}` : '';
 
@@ -120,23 +130,15 @@ export class TaskRepository {
       JOIN projects p ON p.id = t.project_id
       LEFT JOIN users u ON u.id = t.assigned_to
       ${where}
-      ORDER BY t.created_at DESC
-      LIMIT $${idx++} OFFSET $${idx}`;
+      ORDER BY t.created_at DESC, t.id DESC
+      LIMIT $${idx}`;
 
-    const countQuery = `SELECT COUNT(*) FROM tasks t ${where}`;
+    const { rows } = await this.db.query(dataQuery, [...values, limit + 1]);
+    const mapped = rows.map(this.mapRow);
 
-    const [dataRes, countRes] = await Promise.all([
-      this.db.query(dataQuery,  [...values, limit, offset]),
-      this.db.query<{ count: string }>(countQuery, values),
-    ]);
-
-    return [
-      dataRes.rows.map(this.mapRow),
-      parseInt(countRes.rows[0].count, 10),
-    ];
+    return buildCursorResult(mapped, limit, (row) => encodeCursor(row.createdAt, row.id));
   }
 
-  // ── Map flat SQL row → nested Task object ─────────────────────────────────
   private mapRow(row: any): Task {
     return {
       id:          row.id,

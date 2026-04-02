@@ -59,19 +59,17 @@ export interface Task {
 }
 
 // ── Pagination ─────────────────────────────────────────────────────────────
-export interface PaginationParams {
+export interface CursorParams {
   limit:  number;
-  offset: number;
+  cursor?: string;
 }
 
-export interface PaginatedResult<T> {
+export interface CursorResult<T> {
   data: T[];
   meta: {
-    total:       number;
-    limit:       number;
-    offset:      number;
-    totalPages:  number;
-    currentPage: number;
+    limit:     number;
+    hasMore:   boolean;
+    nextCursor?: string;
   };
 }
 

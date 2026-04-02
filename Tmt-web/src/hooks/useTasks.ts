@@ -9,7 +9,10 @@ export function useTasks(filters: TaskFilters = {}, initialLimit = 10) {
   const [meta,    setMeta]    = useState<PaginatedData<Task>['meta'] | null>(null);
   const [loading, setLoading] = useState(false);
   const [error,   setError]   = useState<string | null>(null);
-  const [offset,  setOffset]  = useState(0);
+
+  const [cursor, setCursor] = useState<string | undefined>(undefined);
+  const [cursorStack, setCursorStack] = useState<string[]>([]);
+  const [page, setPage] = useState(1);
 
   const fetchTasks = useCallback(async () => {
     setLoading(true);
@@ -18,7 +21,7 @@ export function useTasks(filters: TaskFilters = {}, initialLimit = 10) {
       const params = {
         ...filters,
         limit:  initialLimit,
-        offset,
+        cursor,
         // strip empty strings from filters
         status:     filters.status     || undefined,
         projectId:  filters.projectId  || undefined,
@@ -35,9 +38,31 @@ export function useTasks(filters: TaskFilters = {}, initialLimit = 10) {
     } finally {
       setLoading(false);
     }
-  }, [offset, initialLimit, JSON.stringify(filters)]);
+  }, [cursor, initialLimit, JSON.stringify(filters)]);
 
   useEffect(() => { fetchTasks(); }, [fetchTasks]);
+
+  // Reset pagination when filters change
+  useEffect(() => {
+    setCursor(undefined);
+    setCursorStack([]);
+    setPage(1);
+  }, [JSON.stringify(filters)]);
+
+  const goNext = useCallback(() => {
+    if (!meta?.nextCursor) return;
+    setCursorStack((s) => [...s, cursor ?? '']);
+    setCursor(meta.nextCursor);
+    setPage((p) => p + 1);
+  }, [meta, cursor]);
+
+  const goPrev = useCallback(() => {
+    if (cursorStack.length === 0) return;
+    const prev = cursorStack[cursorStack.length - 1];
+    setCursorStack((s) => s.slice(0, -1));
+    setCursor(prev || undefined);
+    setPage((p) => Math.max(1, p - 1));
+  }, [cursorStack]);
 
   const createTask = useCallback(async (data: CreateTaskForm) => {
     const res = await tasksApi.create(data);
@@ -65,7 +90,8 @@ export function useTasks(filters: TaskFilters = {}, initialLimit = 10) {
 
   return {
     tasks, meta, loading, error,
-    offset, setOffset,
+    page,
+    goNext, goPrev,
     createTask, updateTaskStatus, updateTask, deleteTask,
     refresh: fetchTasks,
   };

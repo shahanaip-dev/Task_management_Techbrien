@@ -16,7 +16,7 @@ const EMPTY_FORM: CreateProjectForm = { name: '', description: '', memberIds: []
 
 export default function ProjectsPage() {
   const { isAdmin } = useAuth();
-  const { projects, meta, loading, error, createProject, updateProject, deleteProject, offset, setOffset, search, setSearch } = useProjects(12);
+  const { projects, meta, loading, error, createProject, updateProject, deleteProject, page, goNext, goPrev, setSearch } = useProjects(12);
 
   const debounceRef                   = useRef<ReturnType<typeof setTimeout> | null>(null);
   const [inputValue, setInputValue]   = useState('');
@@ -135,7 +135,7 @@ export default function ProjectsPage() {
         <div>
           <h1 className="font-serif text-2xl font-semibold text-[#4B1414]">Projects</h1>
           <p className="text-sm text-[#8A8278] mt-0.5 font-light">
-            {meta ? `${meta.total} project${meta.total !== 1 ? 's' : ''}` : '—'}
+            {projects.length ? `${projects.length} project${projects.length !== 1 ? 's' : ''}` : '—'}
           </p>
         </div>
         {isAdmin && <Button onClick={() => { setForm(EMPTY_FORM); setShowCreate(true); }}>+ New Project</Button>}
@@ -158,12 +158,12 @@ export default function ProjectsPage() {
 
       {error && <div className="bg-red-50 border border-red-200 text-red-700 rounded-lg p-4 mb-6 text-sm">{error}</div>}
 
-      {!loading && meta && meta.total > 0 && (
+      {!loading && projects.length > 0 && (
         <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-8">
           {[
-            { label: 'Total Projects', value: meta.total },
+            { label: 'Projects (page)', value: projects.length },
+            { label: 'Tasks (page)',    value: projects.reduce((s: number, p: Project) => s + (p.taskCount ?? 0), 0) },
             { label: 'Active Projects', value: projects.length },
-            { label: 'Total Tasks',    value: projects.reduce((s: number, p: Project) => s + (p.taskCount ?? 0), 0) },
           ].map((stat) => (
             <div key={stat.label} className="bg-[#F1E7E7] rounded-lg border border-[#C6A0A0] px-5 py-4">
               <p className="text-xs text-[#5B2F2F] uppercase tracking-wide font-medium">{stat.label}</p>
@@ -188,11 +188,11 @@ export default function ProjectsPage() {
         </div>
       )}
 
-      {meta && meta.totalPages > 1 && (
+      {meta && (meta.hasMore || page > 1) && (
         <div className="flex justify-center items-center gap-3 mt-12">
-          <Button variant="secondary" size="sm" disabled={offset === 0} onClick={() => setOffset(Math.max(0, offset - 12))}>← Previous</Button>
-          <span className="text-sm text-[#8A8278]">Page {meta.currentPage} of {meta.totalPages}</span>
-          <Button variant="secondary" size="sm" disabled={meta.currentPage >= meta.totalPages} onClick={() => setOffset(offset + 12)}>Next →</Button>
+          <Button variant="secondary" size="sm" disabled={page === 1} onClick={goPrev}>← Previous</Button>
+          <span className="text-sm text-[#8A8278]">Page {page}</span>
+          <Button variant="secondary" size="sm" disabled={!meta.hasMore} onClick={goNext}>Next →</Button>
         </div>
       )}
 

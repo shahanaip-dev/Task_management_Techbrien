@@ -64,11 +64,11 @@ export declare const TaskQuerySchema: z.ZodObject<{
     description: z.ZodOptional<z.ZodString>;
     dueDate: z.ZodOptional<z.ZodString>;
     limit: z.ZodOptional<z.ZodString>;
-    offset: z.ZodOptional<z.ZodString>;
+    cursor: z.ZodOptional<z.ZodString>;
 }, "strip", z.ZodTypeAny, {
     description?: string | undefined;
     limit?: string | undefined;
-    offset?: string | undefined;
+    cursor?: string | undefined;
     status?: "TODO" | "IN_PROGRESS" | "DONE" | undefined;
     title?: string | undefined;
     projectId?: string | undefined;
@@ -77,7 +77,7 @@ export declare const TaskQuerySchema: z.ZodObject<{
 }, {
     description?: string | undefined;
     limit?: string | undefined;
-    offset?: string | undefined;
+    cursor?: string | undefined;
     status?: "TODO" | "IN_PROGRESS" | "DONE" | undefined;
     title?: string | undefined;
     projectId?: string | undefined;

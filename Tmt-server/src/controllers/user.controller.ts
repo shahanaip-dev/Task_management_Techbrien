@@ -9,7 +9,7 @@ export class UserController {
 
   /**
    * POST /api/v1/users
-   * Admin only ‚Äî creates a new user
+   * Admin only ó creates a new user
    */
   createUser = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
     try {
@@ -22,7 +22,7 @@ export class UserController {
 
   /**
    * GET /api/v1/users
-   * Admin only ‚Äî lists all users with pagination
+   * Admin only ó lists all users with pagination
    */
   listUsers = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
     try {
@@ -35,7 +35,7 @@ export class UserController {
 
   /**
    * GET /api/v1/users/:id
-   * Admin only √¢‚Ç¨‚Äù get user by id
+   * Admin only ó get user by id
    */
   getUser = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
     try {
@@ -48,7 +48,7 @@ export class UserController {
 
   /**
    * PUT /api/v1/users/:id
-   * Admin only √¢‚Ç¨‚Äù update user
+   * Admin only ó update user
    */
   updateUser = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
     try {
@@ -61,7 +61,7 @@ export class UserController {
 
   /**
    * DELETE /api/v1/users/:id
-   * Admin only √¢‚Ç¨‚Äù delete user
+   * Admin only ó delete user
    */
   deleteUser = async (req: AuthenticatedRequest, res: Response, next: NextFunction): Promise<void> => {
     try {
@@ -70,6 +70,19 @@ export class UserController {
       }
       await this.userService.deleteUser(req.params.id);
       sendSuccess(res, null, 'User deleted successfully');
+    } catch (err) {
+      next(err);
+    }
+  };
+
+  /**
+   * PATCH /api/v1/users/me/password
+   * Authenticated user ó change own password
+   */
+  changePassword = async (req: AuthenticatedRequest, res: Response, next: NextFunction): Promise<void> => {
+    try {
+      await this.userService.changePassword(req.user.id, req.body);
+      sendSuccess(res, null, 'Password updated');
     } catch (err) {
       next(err);
     }

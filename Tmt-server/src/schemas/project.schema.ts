@@ -14,5 +14,11 @@ export const UpdateProjectSchema = z.object({
   message: 'At least one field must be provided',
 });
 
+export const ProjectQuerySchema = z.object({
+  name:   z.string().optional(),
+  limit:  z.string().optional(),
+  cursor: z.string().optional(),
+});
+
 export type CreateProjectInput = z.infer<typeof CreateProjectSchema>;
 export type UpdateProjectInput = z.infer<typeof UpdateProjectSchema>;

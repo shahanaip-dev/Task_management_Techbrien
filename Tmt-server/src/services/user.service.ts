@@ -1,8 +1,8 @@
 import { UserRepository } from '../repositories/user.repository';
-import { hashPassword } from '../utils/bcrypt';
+import { comparePassword, hashPassword } from '../utils/bcrypt';
 import { AppError } from '../middleware/error.middleware';
-import { buildPaginated, parsePagination } from '../utils/pagination';
-import { CreateUserInput, UpdateUserInput } from '../schemas/user.schema';
+import { parseCursorPagination } from '../utils/pagination';
+import { ChangePasswordInput, CreateUserInput, UpdateUserInput } from '../schemas/user.schema';
 import { Role } from '../types';
 
 export class UserService {
@@ -25,9 +25,8 @@ export class UserService {
   }
 
   async listUsers(query: Record<string, unknown>) {
-    const pagination = parsePagination(query);
-    const [users, total] = await this.userRepo.findMany(pagination);
-    return buildPaginated(users, total, pagination);
+    const pagination = parseCursorPagination(query);
+    return this.userRepo.findMany(pagination);
   }
 
   async getUser(id: string) {
@@ -68,5 +67,16 @@ export class UserService {
       throw new AppError(403, 'System admin cannot be deleted');
     }
     await this.userRepo.delete(id);
+  }
+
+  async changePassword(userId: string, input: ChangePasswordInput) {
+    const user = await this.userRepo.findById(userId);
+    if (!user || !user.password) throw new AppError(404, 'User not found');
+
+    const ok = await comparePassword(input.currentPassword, user.password);
+    if (!ok) throw new AppError(400, 'Current password is incorrect');
+
+    const hashed = await hashPassword(input.newPassword);
+    await this.userRepo.update(userId, { password: hashed });
   }
 }

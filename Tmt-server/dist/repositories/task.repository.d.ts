@@ -1,5 +1,5 @@
 import { Pool } from 'pg';
-import { Task, TaskStatus, TaskFilters, PaginationParams } from '../types';
+import { Task, TaskStatus, TaskFilters, CursorParams, CursorResult } from '../types';
 export declare class TaskRepository {
     private readonly db;
     constructor(db: Pool);
@@ -20,6 +20,6 @@ export declare class TaskRepository {
         dueDate?: Date | null;
     }): Promise<Task>;
     delete(id: string): Promise<void>;
-    findMany(filters: TaskFilters, { limit, offset }: PaginationParams): Promise<[Task[], number]>;
+    findMany(filters: TaskFilters, { limit, cursor }: CursorParams): Promise<CursorResult<Task>>;
     private mapRow;
 }

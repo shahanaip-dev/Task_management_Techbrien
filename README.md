@@ -194,7 +194,7 @@ docker compose up --build
 
 #### Task Filters (query params)
 ```
-GET /api/v1/tasks?projectId=<uuid>&status=IN_PROGRESS&assignedTo=<uuid>&limit=10&offset=0
+GET /api/v1/tasks?projectId=<uuid>&status=IN_PROGRESS&assignedTo=<uuid>&limit=10&cursor=<cursor>
 ```
 
 ---

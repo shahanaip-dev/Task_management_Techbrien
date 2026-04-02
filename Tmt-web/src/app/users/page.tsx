@@ -23,7 +23,7 @@ function formatDate(value?: string) {
 
 export default function UsersPage() {
   const { user: currentUser, isAdmin } = useAuth();
-  const { users, meta, loading, error, createUser, updateUser, deleteUser, offset, setOffset } = useUsers(12);
+  const { users, meta, loading, error, createUser, updateUser, deleteUser, page, goNext, goPrev } = useUsers(12);
 
   const [showCreate, setShowCreate] = useState(false);
   const [showEdit,   setShowEdit]   = useState(false);
@@ -38,7 +38,7 @@ export default function UsersPage() {
     name: '', email: '', password: '',
   });
 
-  const totalUsers = meta?.total ?? 0;
+  const totalUsers = users.length;
   const isSelf = (u: User) => currentUser?.id === u.id;
   const isSystemAdmin = (u: User) => u.email === 'admin@tmt.com' || u.name === 'System Admin';
 
@@ -134,7 +134,7 @@ export default function UsersPage() {
         <div>
           <h1 className="font-serif text-2xl font-semibold text-[#1C1A18]">Team</h1>
           <p className="text-sm text-[#8A8278] mt-0.5 font-light">
-            {meta ? `${totalUsers} user${totalUsers !== 1 ? 's' : ''}` : '—'}
+            {users.length ? `${totalUsers} user${totalUsers !== 1 ? 's' : ''}` : '—'}
           </p>
         </div>
         <Button onClick={() => setShowCreate(true)}>+ New User</Button>
@@ -208,13 +208,13 @@ export default function UsersPage() {
       </div>
 
       {/* Pagination */}
-      {meta && meta.totalPages > 1 && (
+      {meta && (meta.hasMore || page > 1) && (
         <div className="flex justify-center items-center gap-3 mt-12">
-          <Button variant="secondary" size="sm" disabled={offset === 0}
-            onClick={() => setOffset(Math.max(0, offset - 12))}>← Previous</Button>
-          <span className="text-sm text-[#8A8278]">Page {meta.currentPage} of {meta.totalPages}</span>
-          <Button variant="secondary" size="sm" disabled={meta.currentPage >= meta.totalPages}
-            onClick={() => setOffset(offset + 12)}>Next →</Button>
+          <Button variant="secondary" size="sm" disabled={page === 1}
+            onClick={goPrev}>← Previous</Button>
+          <span className="text-sm text-[#8A8278]">Page {page}</span>
+          <Button variant="secondary" size="sm" disabled={!meta.hasMore}
+            onClick={goNext}>Next →</Button>
         </div>
       )}
 

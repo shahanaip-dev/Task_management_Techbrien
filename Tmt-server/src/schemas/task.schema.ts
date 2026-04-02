@@ -31,7 +31,7 @@ export const TaskQuerySchema = z.object({
   description: z.string().optional(),
   dueDate:    z.string().optional(),
   limit:      z.string().optional(),
-  offset:     z.string().optional(),
+  cursor:     z.string().optional(),
 });
 
 export type CreateTaskInput = z.infer<typeof CreateTaskSchema>;

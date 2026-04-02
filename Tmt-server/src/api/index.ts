@@ -4,6 +4,7 @@ import { authRouter }    from './routes/auth.routes';
 import { userRouter }    from './routes/user.routes';
 import { projectRouter } from './routes/project.routes';
 import { taskRouter }    from './routes/task.routes';
+import { dashboardRouter } from './routes/dashboard.routes';
 
 export function createV1Router(db: Pool): Router {
   const router = Router();
@@ -12,6 +13,7 @@ export function createV1Router(db: Pool): Router {
   router.use('/users',    userRouter(db));
   router.use('/projects', projectRouter(db));
   router.use('/tasks',    taskRouter(db));
+  router.use('/dashboard', dashboardRouter(db));
 
   // Health check
   router.get('/health', (_req, res) => {

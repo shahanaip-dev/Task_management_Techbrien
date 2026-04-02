@@ -14,10 +14,12 @@ function userRouter(db) {
     const userRepo = new user_repository_1.UserRepository(db);
     const userSvc = new user_service_1.UserService(userRepo);
     const controller = new user_controller_1.UserController(userSvc);
-    // All user endpoints: must be authenticated + ADMIN role
+    // Self-service: change own password
+    router.patch('/me/password', auth_middleware_1.authenticate, (0, validate_middleware_1.validateBody)(user_schema_1.ChangePasswordSchema), controller.changePassword);
+    // All other user endpoints: must be authenticated + ADMIN role
     router.use(auth_middleware_1.authenticate, (0, role_middleware_1.authorize)('ADMIN'));
     router.post('/', (0, validate_middleware_1.validateBody)(user_schema_1.CreateUserSchema), controller.createUser);
-    router.get('/', controller.listUsers);
+    router.get('/', (0, validate_middleware_1.validateQuery)(user_schema_1.UserQuerySchema), controller.listUsers);
     router.get('/:id', controller.getUser);
     router.put('/:id', (0, validate_middleware_1.validateBody)(user_schema_1.UpdateUserSchema), controller.updateUser);
     router.delete('/:id', controller.deleteUser);

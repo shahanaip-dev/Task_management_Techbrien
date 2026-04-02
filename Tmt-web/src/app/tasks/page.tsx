@@ -9,7 +9,6 @@ import TaskFilters from '@/components/tasks/TaskFilters';
 import CreateTaskModal from '@/components/tasks/CreateTaskModal';
 import EditTaskModal from '@/components/tasks/EditTaskModal';
 import Button from '@/components/ui/Button';
-import { StatusBadge } from '@/components/ui/Badge';
 import { useTasks } from '@/hooks/useTasks';
 import { useProjects } from '@/hooks/useProjects';
 import { usersApi } from '@/lib/api';
@@ -24,7 +23,7 @@ function TasksPageInner() {
   const [editingTask, setEditingTask] = useState<Task | null>(null);
   const [users,     setUsers]     = useState<User[]>([]);
 
-  const { tasks, meta, loading, error, createTask, updateTaskStatus, updateTask, deleteTask, offset, setOffset } =
+  const { tasks, meta, loading, error, createTask, updateTaskStatus, updateTask, deleteTask, page, goNext, goPrev } =
     useTasks(filters, 12);
   const { projects } = useProjects(100);
 
@@ -32,7 +31,7 @@ function TasksPageInner() {
     usersApi.list({ limit: 100 }).then((r) => setUsers(r.data.data.data)).catch(() => {});
   }, []);
 
-  // Task status counts
+  // Task status counts (current page)
   const counts = {
     todo:       tasks.filter((t) => t.status === 'TODO').length,
     inProgress: tasks.filter((t) => t.status === 'IN_PROGRESS').length,
@@ -67,14 +66,14 @@ function TasksPageInner() {
         <div>
           <h1 className="font-serif text-2xl font-semibold text-[#1C1A18]">Tasks</h1>
           <p className="text-sm text-[#8A8278] mt-0.5 font-light">
-            {meta ? `${meta.total} task${meta.total !== 1 ? 's' : ''}` : '—'}
+            {tasks.length ? `${tasks.length} task${tasks.length !== 1 ? 's' : ''}` : '—'}
           </p>
         </div>
         <Button onClick={() => setShowModal(true)}>+ New Task</Button>
       </div>
 
       {/* Status summary pills */}
-      {!loading && meta && meta.total > 0 && (
+      {!loading && tasks.length > 0 && (
         <div className="flex flex-wrap items-center gap-3 mb-6">
           <div className="bg-white border border-[#E8DDD4] rounded-lg px-4 py-2.5 flex items-center gap-2">
             <span className="text-xs text-[#8A8278]">To Do</span>
@@ -143,13 +142,13 @@ function TasksPageInner() {
       )}
 
       {/* Pagination */}
-      {meta && meta.totalPages > 1 && (
+      {meta && (meta.hasMore || page > 1) && (
         <div className="flex justify-center items-center gap-3 mt-12">
-          <Button variant="secondary" size="sm" disabled={offset === 0}
-            onClick={() => setOffset(Math.max(0, offset - 12))}>← Previous</Button>
-          <span className="text-sm text-[#8A8278]">Page {meta.currentPage} of {meta.totalPages}</span>
-          <Button variant="secondary" size="sm" disabled={meta.currentPage >= meta.totalPages}
-            onClick={() => setOffset(offset + 12)}>Next →</Button>
+          <Button variant="secondary" size="sm" disabled={page === 1}
+            onClick={goPrev}>← Previous</Button>
+          <span className="text-sm text-[#8A8278]">Page {page}</span>
+          <Button variant="secondary" size="sm" disabled={!meta.hasMore}
+            onClick={goNext}>Next →</Button>
         </div>
       )}
 

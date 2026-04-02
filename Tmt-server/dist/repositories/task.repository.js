@@ -1,6 +1,7 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.TaskRepository = void 0;
+const pagination_1 = require("../utils/pagination");
 class TaskRepository {
     constructor(db) {
         this.db = db;
@@ -71,8 +72,7 @@ class TaskRepository {
     async delete(id) {
         await this.db.query(`DELETE FROM tasks WHERE id = $1`, [id]);
     }
-    async findMany(filters, { limit, offset }) {
-        // Build WHERE clause dynamically
+    async findMany(filters, { limit, cursor }) {
         const conditions = [];
         const values = [];
         let idx = 1;
@@ -97,8 +97,14 @@ class TaskRepository {
             values.push(`%${filters.description}%`);
         }
         if (filters.dueDate) {
-            conditions.push(`t.due_date::date = $${idx++}`);
+            conditions.push(`t.due_date >= $${idx} AND t.due_date < ($${idx}::date + interval '1 day')`);
             values.push(filters.dueDate);
+            idx += 1;
+        }
+        const decoded = (0, pagination_1.decodeCursor)(cursor);
+        if (decoded) {
+            conditions.push(`(t.created_at, t.id) < ($${idx++}, $${idx++})`);
+            values.push(decoded.createdAt, decoded.id);
         }
         const where = conditions.length ? `WHERE ${conditions.join(' AND ')}` : '';
         const dataQuery = `
@@ -114,19 +120,12 @@ class TaskRepository {
       JOIN projects p ON p.id = t.project_id
       LEFT JOIN users u ON u.id = t.assigned_to
       ${where}
-      ORDER BY t.created_at DESC
-      LIMIT $${idx++} OFFSET $${idx}`;
-        const countQuery = `SELECT COUNT(*) FROM tasks t ${where}`;
-        const [dataRes, countRes] = await Promise.all([
-            this.db.query(dataQuery, [...values, limit, offset]),
-            this.db.query(countQuery, values),
-        ]);
-        return [
-            dataRes.rows.map(this.mapRow),
-            parseInt(countRes.rows[0].count, 10),
-        ];
+      ORDER BY t.created_at DESC, t.id DESC
+      LIMIT $${idx}`;
+        const { rows } = await this.db.query(dataQuery, [...values, limit + 1]);
+        const mapped = rows.map(this.mapRow);
+        return (0, pagination_1.buildCursorResult)(mapped, limit, (row) => (0, pagination_1.encodeCursor)(row.createdAt, row.id));
     }
-    // ── Map flat SQL row → nested Task object ─────────────────────────────────
     mapRow(row) {
         return {
             id: row.id,

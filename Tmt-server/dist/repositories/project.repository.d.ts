@@ -1,5 +1,5 @@
 import { Pool } from 'pg';
-import { Project, PaginationParams } from '../types';
+import { Project, CursorParams, CursorResult } from '../types';
 export declare class ProjectRepository {
     private readonly db;
     constructor(db: Pool);
@@ -17,8 +17,8 @@ export declare class ProjectRepository {
         memberIds?: string[];
     }): Promise<Project>;
     delete(id: string): Promise<void>;
-    findMany({ limit, offset }: PaginationParams, name?: string): Promise<[Project[], number]>;
-    findManyForUser(userId: string, { limit, offset }: PaginationParams, name?: string): Promise<[Project[], number]>;
+    findMany({ limit, cursor }: CursorParams, name?: string): Promise<CursorResult<Project>>;
+    findManyForUser(userId: string, { limit, cursor }: CursorParams, name?: string): Promise<CursorResult<Project>>;
     findByIdWithCreatorForUser(id: string, userId: string): Promise<Project | null>;
     isMember(projectId: string, userId: string): Promise<boolean>;
 }

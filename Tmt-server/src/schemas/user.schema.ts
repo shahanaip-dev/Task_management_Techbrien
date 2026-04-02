@@ -29,4 +29,21 @@ export const UpdateUserSchema = z.object({
   message: 'At least one field must be provided',
 });
 
+export const UserQuerySchema = z.object({
+  limit:  z.string().optional(),
+  cursor: z.string().optional(),
+});
+
+export const ChangePasswordSchema = z.object({
+  currentPassword: z.string().min(1, 'Current password is required'),
+  newPassword: z
+    .string()
+    .min(8, 'Password must be at least 8 characters')
+    .regex(/^[A-Z]/, 'Password must start with a capital letter')
+    .regex(/[A-Z]/,  'Password must contain at least one uppercase letter')
+    .regex(/[0-9]/,  'Password must contain at least one number')
+    .regex(/[^A-Za-z0-9]/, 'Password must contain at least one special character'),
+});
+
 export type UpdateUserInput = z.infer<typeof UpdateUserSchema>;
+export type ChangePasswordInput = z.infer<typeof ChangePasswordSchema>;

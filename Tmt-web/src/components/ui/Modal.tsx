@@ -1,6 +1,7 @@
 'use client';
 
 import React, { useEffect } from 'react';
+import { createPortal } from 'react-dom';
 import clsx from 'clsx';
 
 interface ModalProps {
@@ -8,10 +9,15 @@ interface ModalProps {
   onClose:  () => void;
   title:    string;
   children: React.ReactNode;
-  size?:    'sm' | 'md' | 'lg';
+  size?:    'sm' | 'md' | 'lg' | 'square';
 }
 
-const sizeClasses = { sm: 'max-w-sm', md: 'max-w-md', lg: 'max-w-lg' };
+const sizeClasses = {
+  sm: 'max-w-sm',
+  md: 'max-w-md',
+  lg: 'max-w-lg',
+  square: 'w-[520px] h-[520px] max-w-[92vw] max-h-[92vh]',
+};
 
 export default function Modal({ isOpen, onClose, title, children, size = 'md' }: ModalProps) {
   useEffect(() => {
@@ -26,16 +32,20 @@ export default function Modal({ isOpen, onClose, title, children, size = 'md' }:
   }, [isOpen]);
 
   if (!isOpen) return null;
+  if (typeof document === 'undefined') return null;
 
-  return (
+  const isSquare = size === 'square';
+
+  return createPortal(
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
       {/* Backdrop */}
       <div className="absolute inset-0 bg-[#1C1A18]/40 backdrop-blur-sm" onClick={onClose} />
 
       {/* Panel */}
       <div className={clsx(
-        'relative w-full bg-[#FAF7F2] rounded-lg shadow-2xl',
+        'relative bg-[#FAF7F2] rounded-lg shadow-2xl',
         'max-h-[90vh] overflow-y-auto border border-[#E8DDD4]',
+        !isSquare && 'w-full',
         sizeClasses[size]
       )}>
         {/* Header */}
@@ -52,6 +62,7 @@ export default function Modal({ isOpen, onClose, title, children, size = 'md' }:
         </div>
         <div className="px-6 py-5">{children}</div>
       </div>
-    </div>
+    </div>,
+    document.body
   );
 }

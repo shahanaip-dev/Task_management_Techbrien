@@ -34,4 +34,25 @@ export declare const UpdateUserSchema: z.ZodEffects<z.ZodObject<{
     name?: string | undefined;
     email?: string | undefined;
 }>;
+export declare const UserQuerySchema: z.ZodObject<{
+    limit: z.ZodOptional<z.ZodString>;
+    cursor: z.ZodOptional<z.ZodString>;
+}, "strip", z.ZodTypeAny, {
+    limit?: string | undefined;
+    cursor?: string | undefined;
+}, {
+    limit?: string | undefined;
+    cursor?: string | undefined;
+}>;
+export declare const ChangePasswordSchema: z.ZodObject<{
+    currentPassword: z.ZodString;
+    newPassword: z.ZodString;
+}, "strip", z.ZodTypeAny, {
+    currentPassword: string;
+    newPassword: string;
+}, {
+    currentPassword: string;
+    newPassword: string;
+}>;
 export type UpdateUserInput = z.infer<typeof UpdateUserSchema>;
+export type ChangePasswordInput = z.infer<typeof ChangePasswordSchema>;

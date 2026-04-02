@@ -10,7 +10,6 @@ import type { User, LoginPayload } from '@/types';
 
 interface AuthContextValue {
   user:     User | null;
-  loading:  boolean;
   login:    (payload: LoginPayload) => Promise<void>;
   logout:   () => void;
   isAdmin:  boolean;
@@ -21,7 +20,6 @@ const AuthContext = createContext<AuthContextValue | null>(null);
 export function AuthProvider({ children }: { children: React.ReactNode }) {
   const router  = useRouter();
   const [user,    setUserState] = useState<User | null>(null);
-  const [loading, setLoading]   = useState(true);
 
   // Restore session from localStorage on mount
   useEffect(() => {
@@ -30,7 +28,6 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     if (token && stored) {
       setUserState(stored);
     }
-    setLoading(false);
   }, []);
 
   const login = useCallback(async (payload: LoginPayload) => {
@@ -51,7 +48,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const isAdmin = user?.role === 'ADMIN';
 
   return (
-    <AuthContext.Provider value={{ user, loading, login, logout, isAdmin }}>
+    <AuthContext.Provider value={{ user, login, logout, isAdmin }}>
       {children}
     </AuthContext.Provider>
   );

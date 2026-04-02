@@ -46,18 +46,16 @@ export interface Task {
     project?: Pick<Project, 'id' | 'name'>;
     assignee?: Pick<User, 'id' | 'name' | 'email'> | null;
 }
-export interface PaginationParams {
+export interface CursorParams {
     limit: number;
-    offset: number;
+    cursor?: string;
 }
-export interface PaginatedResult<T> {
+export interface CursorResult<T> {
     data: T[];
     meta: {
-        total: number;
         limit: number;
-        offset: number;
-        totalPages: number;
-        currentPage: number;
+        hasMore: boolean;
+        nextCursor?: string;
     };
 }
 export interface ApiResponse<T = unknown> {

@@ -1,5 +1,6 @@
 import { Pool } from 'pg';
-import { User, Role, PaginationParams } from '../types';
+import { User, Role, CursorParams, CursorResult } from '../types';
+import { buildCursorResult, decodeCursor, encodeCursor } from '../utils/pagination';
 
 // Never return password in list/create responses
 const PUBLIC_COLS = 'id, name, email, role, created_at AS "createdAt"';
@@ -83,15 +84,28 @@ export class UserRepository {
     await this.db.query(`DELETE FROM users WHERE id = $1`, [id]);
   }
 
-  async findMany({ limit, offset }: PaginationParams): Promise<[Omit<User, 'password'>[], number]> {
-    const [dataRes, countRes] = await Promise.all([
-      this.db.query<Omit<User, 'password'>>(
-        `SELECT ${PUBLIC_COLS} FROM users ORDER BY created_at DESC LIMIT $1 OFFSET $2`,
-        [limit, offset]
-      ),
-      this.db.query<{ count: string }>(`SELECT COUNT(*) FROM users`),
-    ]);
-    return [dataRes.rows, parseInt(countRes.rows[0].count, 10)];
+  async findMany({ limit, cursor }: CursorParams): Promise<CursorResult<Omit<User, 'password'>>> {
+    const conditions: string[] = [];
+    const values: unknown[] = [];
+    let idx = 1;
+
+    const decoded = decodeCursor(cursor);
+    if (decoded) {
+      conditions.push(`(created_at, id) < ($${idx++}, $${idx++})`);
+      values.push(decoded.createdAt, decoded.id);
+    }
+
+    const where = conditions.length ? `WHERE ${conditions.join(' AND ')}` : '';
+    const { rows } = await this.db.query<Omit<User, 'password'>>(
+      `SELECT ${PUBLIC_COLS}
+       FROM users
+       ${where}
+       ORDER BY created_at DESC, id DESC
+       LIMIT $${idx}`,
+      [...values, limit + 1]
+    );
+
+    return buildCursorResult(rows, limit, (row) => encodeCursor(row.createdAt, row.id));
   }
 
   async existsByEmail(email: string): Promise<boolean> {

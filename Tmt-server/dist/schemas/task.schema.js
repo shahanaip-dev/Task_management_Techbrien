@@ -27,6 +27,6 @@ exports.TaskQuerySchema = zod_1.z.object({
     description: zod_1.z.string().optional(),
     dueDate: zod_1.z.string().optional(),
     limit: zod_1.z.string().optional(),
-    offset: zod_1.z.string().optional(),
+    cursor: zod_1.z.string().optional(),
 });
 //# sourceMappingURL=task.schema.js.map

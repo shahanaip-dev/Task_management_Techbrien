@@ -43,7 +43,7 @@ apiClient.interceptors.response.use(
 import type {
   LoginPayload, AuthResponse, User, Project, Task,
   PaginatedData, CreateProjectForm, CreateTaskForm, TaskFilters,
-  CreateUserForm, UpdateUserForm,
+  CreateUserForm, UpdateUserForm, ChangePasswordForm, DashboardSummary,
 } from '../types';
 
 // Auth
@@ -54,9 +54,15 @@ export const authApi = {
     apiClient.get<{ data: User }>('/auth/me'),
 };
 
+// Dashboard
+export const dashboardApi = {
+  summary: () =>
+    apiClient.get<{ data: DashboardSummary }>('/dashboard/summary'),
+};
+
 // Users
 export const usersApi = {
-  list: (params?: { limit?: number; offset?: number }) =>
+  list: (params?: { limit?: number; cursor?: string }) =>
     apiClient.get<{ data: PaginatedData<User> }>('/users', { params }),
   getOne: (id: string) =>
     apiClient.get<{ data: User }>(`/users/${id}`),
@@ -64,13 +70,15 @@ export const usersApi = {
     apiClient.post<{ data: User }>('/users', data),
   update: (id: string, data: UpdateUserForm) =>
     apiClient.put<{ data: User }>(`/users/${id}`, data),
+  changePassword: (data: ChangePasswordForm) =>
+    apiClient.patch(`/users/me/password`, data),
   delete: (id: string) =>
     apiClient.delete(`/users/${id}`),
 };
 
 // Projects
 export const projectsApi = {
-  list: (params?: { limit?: number; offset?: number; name?: string }) =>
+  list: (params?: { limit?: number; cursor?: string; name?: string }) =>
     apiClient.get<{ data: PaginatedData<Project> }>('/projects', { params }),
   getOne: (id: string) =>
     apiClient.get<{ data: Project }>(`/projects/${id}`),
@@ -84,7 +92,7 @@ export const projectsApi = {
 
 // Tasks
 export const tasksApi = {
-  list: (filters?: TaskFilters & { limit?: number; offset?: number }) =>
+  list: (filters?: TaskFilters & { limit?: number; cursor?: string }) =>
     apiClient.get<{ data: PaginatedData<Task> }>('/tasks', {
       params: filters,
     }),

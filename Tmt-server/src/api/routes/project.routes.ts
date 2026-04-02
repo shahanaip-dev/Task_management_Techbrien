@@ -5,8 +5,8 @@ import { ProjectService }    from '../../services/project.service';
 import { ProjectRepository } from '../../repositories/project.repository';
 import { authenticate }      from '../../middleware/auth.middleware';
 import { authorize }         from '../../middleware/role.middleware';
-import { validateBody }      from '../../middleware/validate.middleware';
-import { CreateProjectSchema, UpdateProjectSchema } from '../../schemas/project.schema';
+import { validateBody, validateQuery }      from '../../middleware/validate.middleware';
+import { CreateProjectSchema, UpdateProjectSchema, ProjectQuerySchema } from '../../schemas/project.schema';
 
 export function projectRouter(db: Pool): Router {
   const router      = Router();
@@ -17,7 +17,7 @@ export function projectRouter(db: Pool): Router {
   router.use(authenticate as any);
 
   router.post('/',    authorize('ADMIN') as any, validateBody(CreateProjectSchema), controller.create as any);
-  router.get('/',     controller.list as any);
+  router.get('/',     validateQuery(ProjectQuerySchema), controller.list as any);
   router.get('/:id',  controller.getOne as any);
   router.put('/:id',  authorize('ADMIN') as any, validateBody(UpdateProjectSchema), controller.update as any);
   router.delete('/:id', authorize('ADMIN') as any, controller.delete as any);

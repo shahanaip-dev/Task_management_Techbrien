@@ -8,7 +8,7 @@ class UserController {
         this.userService = userService;
         /**
          * POST /api/v1/users
-         * Admin only — creates a new user
+         * Admin only � creates a new user
          */
         this.createUser = async (req, res, next) => {
             try {
@@ -21,7 +21,7 @@ class UserController {
         };
         /**
          * GET /api/v1/users
-         * Admin only — lists all users with pagination
+         * Admin only � lists all users with pagination
          */
         this.listUsers = async (req, res, next) => {
             try {
@@ -34,7 +34,7 @@ class UserController {
         };
         /**
          * GET /api/v1/users/:id
-         * Admin only â€” get user by id
+         * Admin only � get user by id
          */
         this.getUser = async (req, res, next) => {
             try {
@@ -47,7 +47,7 @@ class UserController {
         };
         /**
          * PUT /api/v1/users/:id
-         * Admin only â€” update user
+         * Admin only � update user
          */
         this.updateUser = async (req, res, next) => {
             try {
@@ -60,7 +60,7 @@ class UserController {
         };
         /**
          * DELETE /api/v1/users/:id
-         * Admin only â€” delete user
+         * Admin only � delete user
          */
         this.deleteUser = async (req, res, next) => {
             try {
@@ -69,6 +69,19 @@ class UserController {
                 }
                 await this.userService.deleteUser(req.params.id);
                 (0, response_1.sendSuccess)(res, null, 'User deleted successfully');
+            }
+            catch (err) {
+                next(err);
+            }
+        };
+        /**
+         * PATCH /api/v1/users/me/password
+         * Authenticated user � change own password
+         */
+        this.changePassword = async (req, res, next) => {
+            try {
+                await this.userService.changePassword(req.user.id, req.body);
+                (0, response_1.sendSuccess)(res, null, 'Password updated');
             }
             catch (err) {
                 next(err);

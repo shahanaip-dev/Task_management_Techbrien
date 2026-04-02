@@ -16,14 +16,12 @@ class ProjectService {
         });
     }
     async listProjects(query, user) {
-        const pagination = (0, pagination_1.parsePagination)(query);
+        const pagination = (0, pagination_1.parseCursorPagination)(query);
         const name = typeof query.name === 'string' && query.name.trim() ? query.name.trim() : undefined;
         if (user.role === 'ADMIN') {
-            const [projects, total] = await this.projectRepo.findMany(pagination, name);
-            return (0, pagination_1.buildPaginated)(projects, total, pagination);
+            return this.projectRepo.findMany(pagination, name);
         }
-        const [projects, total] = await this.projectRepo.findManyForUser(user.id, pagination, name);
-        return (0, pagination_1.buildPaginated)(projects, total, pagination);
+        return this.projectRepo.findManyForUser(user.id, pagination, name);
     }
     async getProject(id, user) {
         const project = user.role === 'ADMIN'

@@ -1,6 +1,7 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.UserRepository = void 0;
+const pagination_1 = require("../utils/pagination");
 // Never return password in list/create responses
 const PUBLIC_COLS = 'id, name, email, role, created_at AS "createdAt"';
 class UserRepository {
@@ -57,12 +58,22 @@ class UserRepository {
     async delete(id) {
         await this.db.query(`DELETE FROM users WHERE id = $1`, [id]);
     }
-    async findMany({ limit, offset }) {
-        const [dataRes, countRes] = await Promise.all([
-            this.db.query(`SELECT ${PUBLIC_COLS} FROM users ORDER BY created_at DESC LIMIT $1 OFFSET $2`, [limit, offset]),
-            this.db.query(`SELECT COUNT(*) FROM users`),
-        ]);
-        return [dataRes.rows, parseInt(countRes.rows[0].count, 10)];
+    async findMany({ limit, cursor }) {
+        const conditions = [];
+        const values = [];
+        let idx = 1;
+        const decoded = (0, pagination_1.decodeCursor)(cursor);
+        if (decoded) {
+            conditions.push(`(created_at, id) < ($${idx++}, $${idx++})`);
+            values.push(decoded.createdAt, decoded.id);
+        }
+        const where = conditions.length ? `WHERE ${conditions.join(' AND ')}` : '';
+        const { rows } = await this.db.query(`SELECT ${PUBLIC_COLS}
+       FROM users
+       ${where}
+       ORDER BY created_at DESC, id DESC
+       LIMIT $${idx}`, [...values, limit + 1]);
+        return (0, pagination_1.buildCursorResult)(rows, limit, (row) => (0, pagination_1.encodeCursor)(row.createdAt, row.id));
     }
     async existsByEmail(email) {
         const { rows } = await this.db.query(`SELECT COUNT(*) FROM users WHERE email = $1`, [email.toLowerCase().trim()]);

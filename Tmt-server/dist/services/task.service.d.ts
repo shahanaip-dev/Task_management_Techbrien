@@ -14,7 +14,7 @@ export declare class TaskService {
     listTasks(query: Record<string, unknown>, user?: {
         id: string;
         role: string;
-    }): Promise<import("../types").PaginatedResult<import("../types").Task>>;
+    }): Promise<import("../types").CursorResult<import("../types").Task>>;
     getTask(id: string, user?: {
         id: string;
         role: string;

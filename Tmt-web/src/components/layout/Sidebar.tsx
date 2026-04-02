@@ -1,9 +1,12 @@
 'use client';
 
+import { useState } from 'react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { useAuth } from '@/context/AuthContext';
 import { RoleBadge } from '@/components/ui/Badge';
+import Modal from '@/components/ui/Modal';
+import ProfileForm from '@/components/profile/ProfileForm';
 
 const NAV_ITEMS = [
   {
@@ -58,6 +61,7 @@ interface SidebarProps {
 export default function Sidebar({ isOpen, setIsOpen }: SidebarProps) {
   const pathname  = usePathname();
   const { user, logout, isAdmin } = useAuth();
+  const [showProfile, setShowProfile] = useState(false);
 
   const isActive = (href: string) =>
     href === '/dashboard' ? pathname === '/dashboard' : pathname.startsWith(href);
@@ -139,7 +143,12 @@ export default function Sidebar({ isOpen, setIsOpen }: SidebarProps) {
       {/* ── User footer ─────────────────────────────────────── */}
       {user && (
         <div className="border-t border-[#E8DDD4] px-4 py-4 flex-shrink-0">
-          <div className="flex items-center gap-3 mb-3">
+          <button
+            type="button"
+            onClick={() => { setShowProfile(true); setIsOpen(false); }}
+            className="w-full text-left flex items-center gap-3 mb-3 rounded-md p-1.5 -m-1.5 hover:bg-[#FAF7F2] transition-colors"
+            aria-label="Edit profile"
+          >
             {/* Avatar */}
             <div className="w-8 h-8 rounded-full bg-[#F5E6DC] flex items-center justify-center
               text-[#7D1F1F] text-sm font-semibold flex-shrink-0">
@@ -149,7 +158,7 @@ export default function Sidebar({ isOpen, setIsOpen }: SidebarProps) {
               <p className="text-sm font-medium text-[#1C1A18] truncate leading-tight">{user.name}</p>
               <p className="text-xs text-[#8A8278] truncate leading-tight">{user.email}</p>
             </div>
-          </div>
+          </button>
 
           <div className="flex items-center justify-between">
             <RoleBadge role={user.role} />
@@ -166,6 +175,12 @@ export default function Sidebar({ isOpen, setIsOpen }: SidebarProps) {
           </div>
         </div>
       )}
+
+      <Modal isOpen={showProfile} onClose={() => setShowProfile(false)} title="Profile" size="square">
+        <div className="w-full max-w-[420px] mx-auto">
+          <ProfileForm showHeader={false} onSuccess={() => setShowProfile(false)} />
+        </div>
+      </Modal>
     </aside>
     </>
   );

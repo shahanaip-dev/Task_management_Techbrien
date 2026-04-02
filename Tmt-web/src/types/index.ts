@@ -46,15 +46,29 @@ export interface ApiResponse<T = unknown> {
 export interface PaginatedData<T> {
   data: T[];
   meta: {
-    total:       number;
-    limit:       number;
-    offset:      number;
-    totalPages:  number;
-    currentPage: number;
+    limit:     number;
+    hasMore:   boolean;
+    nextCursor?: string;
   };
 }
 
-// ── Auth ───────────────────────────────────────────────────────────────────
+export interface DashboardSummary {
+  totals: {
+    tasks: number;
+    projects: number;
+    tasksDone: number;
+    tasksInProgress: number;
+    teamMembers?: number;
+  };
+  statusCounts: {
+    TODO: number;
+    IN_PROGRESS: number;
+    DONE: number;
+  };
+  projectTaskCounts: Array<{ name: string; value: number }>;
+}
+
+// ── Auth ──────────────────────────────────────────────────────────────────
 export interface LoginPayload { email: string; password: string; }
 export interface AuthResponse  { token: string; user: User; }
 
@@ -69,6 +83,10 @@ export interface UpdateUserForm {
   name?:     string;
   email?:    string;
   password?: string;
+}
+export interface ChangePasswordForm {
+  currentPassword: string;
+  newPassword:     string;
 }
 export interface CreateTaskForm {
   title:       string;

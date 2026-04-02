@@ -1,6 +1,7 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.ProjectRepository = void 0;
+const pagination_1 = require("../utils/pagination");
 class ProjectRepository {
     constructor(db) {
         this.db = db;
@@ -15,11 +16,17 @@ class ProjectRepository {
          u.id   AS creator_id,
          u.name AS creator_name,
          u.email AS creator_email,
+         COALESCE(tc.task_count, 0) AS task_count,
          ARRAY(
            SELECT pm.user_id::text FROM project_members pm WHERE pm.project_id = p.id
          ) AS member_ids
        FROM projects p
        JOIN users u ON u.id = p.created_by
+       LEFT JOIN (
+         SELECT project_id, COUNT(*)::int AS task_count
+         FROM tasks
+         GROUP BY project_id
+       ) tc ON tc.project_id = p.id
        WHERE p.id = $1`, [id]);
         if (!rows[0])
             return null;
@@ -30,6 +37,7 @@ class ProjectRepository {
             description: row.description,
             createdBy: row.created_by,
             createdAt: row.created_at,
+            taskCount: row.task_count,
             memberIds: row.member_ids ?? [],
             creator: {
                 id: row.creator_id,
@@ -118,29 +126,40 @@ class ProjectRepository {
         // Tasks are CASCADE deleted by FK constraint
         await this.db.query(`DELETE FROM projects WHERE id = $1`, [id]);
     }
-    async findMany({ limit, offset }, name) {
-        const nameFilter = name ? `WHERE p.name ILIKE $3` : '';
-        const countFilter = name ? `WHERE name ILIKE $1` : '';
-        const params = name ? [limit, offset, `%${name}%`] : [limit, offset];
-        const countParams = name ? [`%${name}%`] : [];
-        const [dataRes, countRes] = await Promise.all([
-            this.db.query(`SELECT
-           p.id, p.name, p.description, p.created_by, p.created_at,
-           u.id    AS creator_id,
-           u.name  AS creator_name,
-           u.email AS creator_email,
-           (SELECT COUNT(*) FROM tasks t WHERE t.project_id = p.id)::int AS task_count,
-           ARRAY(
-             SELECT pm.user_id::text FROM project_members pm WHERE pm.project_id = p.id
-           ) AS member_ids
-         FROM projects p
-         JOIN users u ON u.id = p.created_by
-         ${nameFilter}
-         ORDER BY p.created_at DESC
-         LIMIT $1 OFFSET $2`, params),
-            this.db.query(`SELECT COUNT(*) FROM projects ${countFilter}`, countParams),
-        ]);
-        const projects = dataRes.rows.map((row) => ({
+    async findMany({ limit, cursor }, name) {
+        const conditions = [];
+        const values = [];
+        let idx = 1;
+        if (name) {
+            conditions.push(`p.name ILIKE $${idx++}`);
+            values.push(`%${name}%`);
+        }
+        const decoded = (0, pagination_1.decodeCursor)(cursor);
+        if (decoded) {
+            conditions.push(`(p.created_at, p.id) < ($${idx++}, $${idx++})`);
+            values.push(decoded.createdAt, decoded.id);
+        }
+        const where = conditions.length ? `WHERE ${conditions.join(' AND ')}` : '';
+        const { rows } = await this.db.query(`SELECT
+         p.id, p.name, p.description, p.created_by, p.created_at,
+         u.id    AS creator_id,
+         u.name  AS creator_name,
+         u.email AS creator_email,
+         COALESCE(tc.task_count, 0) AS task_count,
+         ARRAY(
+           SELECT pm.user_id::text FROM project_members pm WHERE pm.project_id = p.id
+         ) AS member_ids
+       FROM projects p
+       JOIN users u ON u.id = p.created_by
+       LEFT JOIN (
+         SELECT project_id, COUNT(*)::int AS task_count
+         FROM tasks
+         GROUP BY project_id
+       ) tc ON tc.project_id = p.id
+       ${where}
+       ORDER BY p.created_at DESC, p.id DESC
+       LIMIT $${idx}`, [...values, limit + 1]);
+        const projects = rows.map((row) => ({
             id: row.id,
             name: row.name,
             description: row.description,
@@ -154,37 +173,43 @@ class ProjectRepository {
                 email: row.creator_email,
             },
         }));
-        return [projects, parseInt(countRes.rows[0].count, 10)];
+        return (0, pagination_1.buildCursorResult)(projects, limit, (row) => (0, pagination_1.encodeCursor)(row.createdAt, row.id));
     }
-    async findManyForUser(userId, { limit, offset }, name) {
-        const nameFilter = name ? `AND p.name ILIKE $4` : '';
-        const countFilter = name ? `AND p.name ILIKE $2` : '';
-        const params = name ? [limit, offset, userId, `%${name}%`] : [limit, offset, userId];
-        const countParams = name ? [userId, `%${name}%`] : [userId];
-        const [dataRes, countRes] = await Promise.all([
-            this.db.query(`SELECT
-           p.id, p.name, p.description, p.created_by, p.created_at,
-           u.id    AS creator_id,
-           u.name  AS creator_name,
-           u.email AS creator_email,
-           (SELECT COUNT(*) FROM tasks t2
-            WHERE t2.project_id = p.id AND t2.assigned_to = $3)::int AS task_count,
-           ARRAY(
-             SELECT pm2.user_id::text FROM project_members pm2 WHERE pm2.project_id = p.id
-           ) AS member_ids
-         FROM projects p
-         JOIN users u ON u.id = p.created_by
-         JOIN project_members pm ON pm.project_id = p.id AND pm.user_id = $3
-         ${nameFilter}
-         GROUP BY p.id, u.id
-         ORDER BY p.created_at DESC
-         LIMIT $1 OFFSET $2`, params),
-            this.db.query(`SELECT COUNT(DISTINCT p.id)
-         FROM projects p
-         JOIN project_members pm ON pm.project_id = p.id AND pm.user_id = $1
-         ${countFilter}`, countParams),
-        ]);
-        const projects = dataRes.rows.map((row) => ({
+    async findManyForUser(userId, { limit, cursor }, name) {
+        const conditions = [];
+        const values = [userId];
+        let idx = 2;
+        if (name) {
+            conditions.push(`p.name ILIKE $${idx++}`);
+            values.push(`%${name}%`);
+        }
+        const decoded = (0, pagination_1.decodeCursor)(cursor);
+        if (decoded) {
+            conditions.push(`(p.created_at, p.id) < ($${idx++}, $${idx++})`);
+            values.push(decoded.createdAt, decoded.id);
+        }
+        const where = conditions.length ? `WHERE ${conditions.join(' AND ')}` : '';
+        const { rows } = await this.db.query(`SELECT
+         p.id, p.name, p.description, p.created_by, p.created_at,
+         u.id    AS creator_id,
+         u.name  AS creator_name,
+         u.email AS creator_email,
+         COALESCE(tc.task_count, 0) AS task_count,
+         ARRAY(
+           SELECT pm2.user_id::text FROM project_members pm2 WHERE pm2.project_id = p.id
+         ) AS member_ids
+       FROM projects p
+       JOIN users u ON u.id = p.created_by
+       JOIN project_members pm ON pm.project_id = p.id AND pm.user_id = $1
+       LEFT JOIN (
+         SELECT project_id, assigned_to, COUNT(*)::int AS task_count
+         FROM tasks
+         GROUP BY project_id, assigned_to
+       ) tc ON tc.project_id = p.id AND tc.assigned_to = $1
+       ${where}
+       ORDER BY p.created_at DESC, p.id DESC
+       LIMIT $${idx}`, [...values, limit + 1]);
+        const projects = rows.map((row) => ({
             id: row.id,
             name: row.name,
             description: row.description,
@@ -198,7 +223,7 @@ class ProjectRepository {
                 email: row.creator_email,
             },
         }));
-        return [projects, parseInt(countRes.rows[0].count, 10)];
+        return (0, pagination_1.buildCursorResult)(projects, limit, (row) => (0, pagination_1.encodeCursor)(row.createdAt, row.id));
     }
     async findByIdWithCreatorForUser(id, userId) {
         const { rows } = await this.db.query(`SELECT
@@ -206,16 +231,20 @@ class ProjectRepository {
          u.id   AS creator_id,
          u.name AS creator_name,
          u.email AS creator_email,
-         (SELECT COUNT(*) FROM tasks t2
-          WHERE t2.project_id = p.id AND t2.assigned_to = $2)::int AS task_count,
+         COALESCE(tc.task_count, 0) AS task_count,
          ARRAY(
            SELECT pm2.user_id::text FROM project_members pm2 WHERE pm2.project_id = p.id
          ) AS member_ids
        FROM projects p
        JOIN users u ON u.id = p.created_by
        JOIN project_members pm ON pm.project_id = p.id AND pm.user_id = $2
+       LEFT JOIN (
+         SELECT project_id, assigned_to, COUNT(*)::int AS task_count
+         FROM tasks
+         GROUP BY project_id, assigned_to
+       ) tc ON tc.project_id = p.id AND tc.assigned_to = $2
        WHERE p.id = $1
-       GROUP BY p.id, u.id`, [id, userId]);
+       GROUP BY p.id, u.id, tc.task_count`, [id, userId]);
         if (!rows[0])
             return null;
         const row = rows[0];

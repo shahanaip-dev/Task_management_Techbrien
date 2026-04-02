@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useEffect, useState } from 'react';
 import {
   BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer,
   PieChart, Pie, Cell, Legend
@@ -12,13 +12,32 @@ interface TaskOverviewChartsProps {
 const COLORS = ['#7D1F1F', '#B45309', '#059669', '#2563EB', '#7C3AED'];
 
 export default function TaskOverviewCharts({ statusData, projectData }: TaskOverviewChartsProps) {
+  const [ready, setReady] = useState(false);
+
+  useEffect(() => {
+    setReady(true);
+  }, []);
+
+  if (!ready) {
+    return (
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-8">
+        <div className="bg-white p-6 rounded-xl border border-[#E8DDD4] shadow-sm">
+          <div className="h-64 w-full" />
+        </div>
+        <div className="bg-white p-6 rounded-xl border border-[#E8DDD4] shadow-sm">
+          <div className="h-64 w-full" />
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-8">
       {/* Bar Chart: Task Status */}
       <div className="bg-white p-6 rounded-xl border border-[#E8DDD4] shadow-sm">
         <h3 className="font-serif text-lg font-semibold text-[#1C1A18] mb-6">Task Status Distribution</h3>
         <div className="h-64 w-full">
-          <ResponsiveContainer width="100%" height="100%">
+          <ResponsiveContainer width="100%" height="100%" minHeight={256} minWidth={0}>
             <BarChart data={statusData}>
               <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#F1E7E7" />
               <XAxis 
@@ -47,7 +66,7 @@ export default function TaskOverviewCharts({ statusData, projectData }: TaskOver
       <div className="bg-white p-6 rounded-xl border border-[#E8DDD4] shadow-sm">
         <h3 className="font-serif text-lg font-semibold text-[#1C1A18] mb-6">Tasks by Project</h3>
         <div className="h-64 w-full">
-          <ResponsiveContainer width="100%" height="100%">
+          <ResponsiveContainer width="100%" height="100%" minHeight={256} minWidth={0}>
             <PieChart>
               <Pie
                 data={projectData}

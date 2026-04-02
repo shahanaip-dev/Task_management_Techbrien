@@ -1,5 +1,5 @@
 import { Pool } from 'pg';
-import { User, Role, PaginationParams } from '../types';
+import { User, Role, CursorParams, CursorResult } from '../types';
 export declare class UserRepository {
     private readonly db;
     constructor(db: Pool);
@@ -20,6 +20,6 @@ export declare class UserRepository {
         role?: Role;
     }): Promise<Omit<User, 'password'>>;
     delete(id: string): Promise<void>;
-    findMany({ limit, offset }: PaginationParams): Promise<[Omit<User, 'password'>[], number]>;
+    findMany({ limit, cursor }: CursorParams): Promise<CursorResult<Omit<User, 'password'>>>;
     existsByEmail(email: string): Promise<boolean>;
 }

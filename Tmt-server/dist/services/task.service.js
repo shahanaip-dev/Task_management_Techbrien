@@ -33,7 +33,7 @@ class TaskService {
         });
     }
     async listTasks(query, user) {
-        const pagination = (0, pagination_1.parsePagination)(query);
+        const pagination = (0, pagination_1.parseCursorPagination)(query);
         const filters = {
             projectId: query.projectId,
             status: query.status,
@@ -45,8 +45,7 @@ class TaskService {
         if (user?.role === 'EMPLOYEE') {
             filters.assignedTo = user.id;
         }
-        const [tasks, total] = await this.taskRepo.findMany(filters, pagination);
-        return (0, pagination_1.buildPaginated)(tasks, total, pagination);
+        return this.taskRepo.findMany(filters, pagination);
     }
     async getTask(id, user) {
         const task = await this.taskRepo.findByIdWithRelations(id);

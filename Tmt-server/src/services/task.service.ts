@@ -2,7 +2,7 @@ import { TaskRepository }    from '../repositories/task.repository';
 import { ProjectRepository } from '../repositories/project.repository';
 import { UserRepository }    from '../repositories/user.repository';
 import { AppError }          from '../middleware/error.middleware';
-import { buildPaginated, parsePagination } from '../utils/pagination';
+import { parseCursorPagination } from '../utils/pagination';
 import { TaskFilters, TaskStatus } from '../types';
 import {
   CreateTaskInput,
@@ -43,7 +43,7 @@ export class TaskService {
   }
 
   async listTasks(query: Record<string, unknown>, user?: { id: string; role: string }) {
-    const pagination = parsePagination(query);
+    const pagination = parseCursorPagination(query);
     const filters: TaskFilters = {
       projectId:  query.projectId  as string | undefined,
       status:     query.status     as TaskStatus | undefined,
@@ -55,8 +55,7 @@ export class TaskService {
     if (user?.role === 'EMPLOYEE') {
       filters.assignedTo = user.id;
     }
-    const [tasks, total] = await this.taskRepo.findMany(filters, pagination);
-    return buildPaginated(tasks, total, pagination);
+    return this.taskRepo.findMany(filters, pagination);
   }
 
   async getTask(id: string, user?: { id: string; role: string }) {

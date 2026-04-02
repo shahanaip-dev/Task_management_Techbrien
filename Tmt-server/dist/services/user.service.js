@@ -22,9 +22,8 @@ class UserService {
         });
     }
     async listUsers(query) {
-        const pagination = (0, pagination_1.parsePagination)(query);
-        const [users, total] = await this.userRepo.findMany(pagination);
-        return (0, pagination_1.buildPaginated)(users, total, pagination);
+        const pagination = (0, pagination_1.parseCursorPagination)(query);
+        return this.userRepo.findMany(pagination);
     }
     async getUser(id) {
         const user = await this.userRepo.findPublicById(id);
@@ -61,6 +60,16 @@ class UserService {
             throw new error_middleware_1.AppError(403, 'System admin cannot be deleted');
         }
         await this.userRepo.delete(id);
+    }
+    async changePassword(userId, input) {
+        const user = await this.userRepo.findById(userId);
+        if (!user || !user.password)
+            throw new error_middleware_1.AppError(404, 'User not found');
+        const ok = await (0, bcrypt_1.comparePassword)(input.currentPassword, user.password);
+        if (!ok)
+            throw new error_middleware_1.AppError(400, 'Current password is incorrect');
+        const hashed = await (0, bcrypt_1.hashPassword)(input.newPassword);
+        await this.userRepo.update(userId, { password: hashed });
     }
 }
 exports.UserService = UserService;

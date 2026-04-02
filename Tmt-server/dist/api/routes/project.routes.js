@@ -16,7 +16,7 @@ function projectRouter(db) {
     const controller = new project_controller_1.ProjectController(projectSvc);
     router.use(auth_middleware_1.authenticate);
     router.post('/', (0, role_middleware_1.authorize)('ADMIN'), (0, validate_middleware_1.validateBody)(project_schema_1.CreateProjectSchema), controller.create);
-    router.get('/', controller.list);
+    router.get('/', (0, validate_middleware_1.validateQuery)(project_schema_1.ProjectQuerySchema), controller.list);
     router.get('/:id', controller.getOne);
     router.put('/:id', (0, role_middleware_1.authorize)('ADMIN'), (0, validate_middleware_1.validateBody)(project_schema_1.UpdateProjectSchema), controller.update);
     router.delete('/:id', (0, role_middleware_1.authorize)('ADMIN'), controller.delete);

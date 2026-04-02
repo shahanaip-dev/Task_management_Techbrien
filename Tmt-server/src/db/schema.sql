@@ -19,6 +19,7 @@ CREATE TABLE IF NOT EXISTS users (
 );
 
 CREATE INDEX IF NOT EXISTS idx_users_email ON users(email);
+CREATE INDEX IF NOT EXISTS idx_users_created_at ON users(created_at);
 
 -- ─── Projects ────────────────────────────────────────────────────────────────
 
@@ -31,6 +32,7 @@ CREATE TABLE IF NOT EXISTS projects (
 );
 
 CREATE INDEX IF NOT EXISTS idx_projects_created_by ON projects(created_by);
+CREATE INDEX IF NOT EXISTS idx_projects_created_at ON projects(created_at);
 
 -- ─── Project Members ─────────────────────────────────────────────────────────
 CREATE TABLE IF NOT EXISTS project_members (
@@ -59,3 +61,6 @@ CREATE INDEX IF NOT EXISTS idx_tasks_project_id   ON tasks(project_id);
 CREATE INDEX IF NOT EXISTS idx_tasks_assigned_to  ON tasks(assigned_to);
 CREATE INDEX IF NOT EXISTS idx_tasks_status       ON tasks(status);
 CREATE INDEX IF NOT EXISTS idx_tasks_project_status ON tasks(project_id, status);
+CREATE INDEX IF NOT EXISTS idx_tasks_project_assigned ON tasks(project_id, assigned_to);
+CREATE INDEX IF NOT EXISTS idx_tasks_due_date ON tasks(due_date);
+CREATE INDEX IF NOT EXISTS idx_tasks_created_at ON tasks(created_at);

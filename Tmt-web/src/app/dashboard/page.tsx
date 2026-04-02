@@ -1,66 +1,48 @@
 'use client';
 
-import { useEffect, useState, useRef } from 'react';
+import { useEffect, useState } from 'react';
+import Link from 'next/link';
 import toast from 'react-hot-toast';
 import AppLayout from '@/components/layout/AppLayout';
-import ProjectCard from '@/components/projects/ProjectCard';
-import Modal from '@/components/ui/Modal';
-import Input, { Textarea } from '@/components/ui/Input';
 import Button from '@/components/ui/Button';
 import { useAuth } from '@/context/AuthContext';
-import { usersApi, projectsApi, tasksApi } from '@/lib/api';
-import type { Project, User, Task } from '@/types';
+import { dashboardApi } from '@/lib/api';
+import type { DashboardSummary } from '@/types';
 import StatCard from '@/components/dashboard/StatCard';
 import TaskOverviewCharts from '@/components/dashboard/TaskOverviewCharts';
-import Link from 'next/link';
-
-const EMPTY_FORM: any = null; // Unused in dashboard
 
 export default function DashboardPage() {
   const { user, isAdmin } = useAuth();
-  const [users,         setUsers]        = useState<User[]>([]);
-  const [allTasks,      setAllTasks]     = useState<Task[]>([]);
-  const [projects,      setProjects]     = useState<Project[]>([]);
-  const [loading,       setLoading]      = useState(true);
+  const [summary, setSummary] = useState<DashboardSummary | null>(null);
+  const [loading, setLoading] = useState(true);
 
   useEffect(() => {
+    let isMounted = true;
     setLoading(true);
-    const apiCalls: any[] = [
-      projectsApi.list({ limit: 1000 }),
-      tasksApi.list({ limit: 1000 }),
-    ];
-    
-    if (isAdmin) {
-      apiCalls.push(usersApi.list({ limit: 1000 }));
-    }
 
-    Promise.all(apiCalls)
-      .then((results: any[]) => {
-        const pRes = results[0];
-        const tRes = results[1];
-        const uRes = results[2];
-
-        setProjects(pRes.data.data.data);
-        setAllTasks(tRes.data.data.data);
-        if (uRes) {
-          setUsers(uRes.data.data.data.filter((u: User) => u.role !== 'ADMIN'));
-        }
+    dashboardApi.summary()
+      .then((res) => {
+        if (isMounted) setSummary(res.data.data);
       })
-      .catch((err) => toast.error('Failed to load dashboard data'))
-      .finally(() => setLoading(false));
-  }, [isAdmin]);
+      .catch(() => {
+        if (isMounted) toast.error('Failed to load dashboard data');
+      })
+      .finally(() => {
+        if (isMounted) setLoading(false);
+      });
 
-  // ── Dashboard Data Prep ──────────────────────────────────────────────────
+    return () => { isMounted = false; };
+  }, []);
+
+  const statusCounts = summary?.statusCounts ?? { TODO: 0, IN_PROGRESS: 0, DONE: 0 };
   const statusData = [
-    { name: 'To Do',       value: allTasks.filter((t: Task) => t.status === 'TODO').length },
-    { name: 'In Progress', value: allTasks.filter((t: Task) => t.status === 'IN_PROGRESS').length },
-    { name: 'Done',        value: allTasks.filter((t: Task) => t.status === 'DONE').length },
+    { name: 'To Do',       value: statusCounts.TODO },
+    { name: 'In Progress', value: statusCounts.IN_PROGRESS },
+    { name: 'Done',        value: statusCounts.DONE },
   ];
 
-  const projectTaskCounts = projects.map((p: Project) => ({
-    name:  p.name,
-    value: allTasks.filter((t: Task) => t.projectId === p.id).length
-  })).filter((p) => p.value > 0);
+  const projectTaskCounts = summary?.projectTaskCounts ?? [];
+  const totals = summary?.totals;
 
   if (loading) {
     return (
@@ -88,27 +70,27 @@ export default function DashboardPage() {
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
-        <StatCard 
-          label={isAdmin ? "Total Tasks" : "My Tasks"} 
-          value={allTasks.length} 
+        <StatCard
+          label={isAdmin ? 'Total Tasks' : 'My Tasks'}
+          value={totals?.tasks ?? 0}
           icon={
             <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2" />
             </svg>
           }
         />
-        <StatCard 
-          label={isAdmin ? "Active Projects" : "My Projects"}
-          value={projects.length}
+        <StatCard
+          label={isAdmin ? 'Active Projects' : 'My Projects'}
+          value={totals?.projects ?? 0}
           icon={
             <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 7v10a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2h-6l-2-2H5a2 2 0 00-2 2z" />
             </svg>
           }
         />
-        <StatCard 
-          label="Tasks Done" 
-          value={allTasks.filter(t => t.status === 'DONE').length}
+        <StatCard
+          label="Tasks Done"
+          value={totals?.tasksDone ?? 0}
           className="border-green-100"
           icon={
             <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -117,9 +99,9 @@ export default function DashboardPage() {
           }
         />
         {isAdmin ? (
-          <StatCard 
-            label="Team Members" 
-            value={users.length}
+          <StatCard
+            label="Team Members"
+            value={totals?.teamMembers ?? 0}
             icon={
               <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z" />
@@ -127,9 +109,9 @@ export default function DashboardPage() {
             }
           />
         ) : (
-          <StatCard 
-            label="In Progress" 
-            value={allTasks.filter(t => t.status === 'IN_PROGRESS').length}
+          <StatCard
+            label="In Progress"
+            value={totals?.tasksInProgress ?? 0}
             className="border-orange-100"
             icon={
               <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -139,7 +121,7 @@ export default function DashboardPage() {
           />
         )}
       </div>
-      
+
       <TaskOverviewCharts statusData={statusData} projectData={projectTaskCounts} />
 
       {!isAdmin && (
