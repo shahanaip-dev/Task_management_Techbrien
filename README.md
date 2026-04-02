@@ -1,4 +1,4 @@
-# TMT Task Management (Go + Next)
+﻿# TMT Task Management (Go + Next)
 
 This repository hosts a Go-powered REST backend together with a Next.js App Router frontend that delivers a simplified yet production-looking task/project workspace tailored for Techbrien’s machine test. Authentication is handled via JWT, the UI is Tailwind-powered, and everything can run locally or via Docker Compose.
 
@@ -149,10 +149,3 @@ Services:
 | DELETE | `/api/v1/tasks/:id`           | Delete task            |
 
 ---
-
-## Next Steps
-
-1. Seed a PostgreSQL database and register your first admin via the Go service.
-2. Log in via the Next.js app and verify project/task workflows.
-3. Run `docker compose up --build` when you need a reproducible local environment.
-
