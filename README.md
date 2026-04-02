@@ -149,3 +149,9 @@ Services:
 | DELETE | `/api/v1/tasks/:id`           | Delete task            |
 
 ---
+
+## Default Admin Credentials
+
+| Role  | Email           | Password   |
+|-------|-----------------|------------|
+| Admin | admin@techbrien | Admin@123  |
