@@ -30,8 +30,8 @@ export default function TaskFilters({ filters, onChange, onReset, projects, user
   );
 
   return (
-    <div className="bg-white rounded-xl border border-[#E8DDD4] px-6 py-5 shadow-sm">
-      <div className="flex items-center justify-between mb-5">
+    <div className="bg-white rounded-xl border border-[#E8DDD4] px-5 py-3 shadow-sm">
+      <div className="flex items-center justify-between mb-3">
         <span className="text-sm font-semibold text-[#1C1A18] tracking-wide">Filters</span>
         {hasActive && (
           <button
@@ -42,7 +42,7 @@ export default function TaskFilters({ filters, onChange, onReset, projects, user
           </button>
         )}
       </div>
-      <div className="grid grid-cols-1 sm:grid-cols-3 gap-5">
+      <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
         <Select
           label="Project"
           options={projectOptions}

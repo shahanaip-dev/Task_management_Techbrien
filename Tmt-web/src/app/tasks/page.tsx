@@ -25,13 +25,13 @@ function TasksPageInner() {
   const [users,     setUsers]     = useState<User[]>([]);
 
   const { tasks, meta, loading, error, createTask, updateTaskStatus, updateTask, deleteTask, page, goNext, goPrev } =
-    useTasks(filters, 12);
+    useTasks(filters, 8);
   const { project } = useProject(defaultProjectId);
   const { projects: allProjects } = useProjects(100, !defaultProjectId);
   const projects = defaultProjectId ? (project ? [project] : []) : allProjects;
 
   useEffect(() => {
-    usersApi.list({ limit: 100 }).then((r) => setUsers(r.data.data.data)).catch(() => {});
+    usersApi.list({ limit: 6 }).then((r) => setUsers(r.data.data.data)).catch(() => {});
   }, []);
 
   // Task status counts (current page)
@@ -77,7 +77,7 @@ function TasksPageInner() {
 
       {/* Status summary pills */}
       {!loading && tasks.length > 0 && (
-        <div className="flex flex-wrap items-center gap-3 mb-6">
+        <div className="flex flex-wrap items-center gap-2 mb-6">
           <div className="bg-white border border-[#E8DDD4] rounded-lg px-4 py-2.5 flex items-center gap-2">
             <span className="text-xs text-[#8A8278]">To Do</span>
             <span className="font-semibold text-[#1C1A18] text-sm">{counts.todo}</span>
@@ -118,7 +118,7 @@ function TasksPageInner() {
         </div>
       ) : tasks.length === 0 ? (
         <div className="text-center py-24">
-          <div className="w-14 h-14 bg-[#F5E6DC] rounded-2xl flex items-center justify-center mx-auto mb-5">
+          <div className="w-14 h-14 rounded-2xl flex items-center justify-center mx-auto mb-5">
             <svg className="w-7 h-7 text-[#7D1F1F]" fill="none" viewBox="0 0 24 24" stroke="currentColor">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5}
                 d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2" />
@@ -145,13 +145,13 @@ function TasksPageInner() {
       )}
 
       {/* Pagination */}
-      {meta && (meta.hasMore || page > 1) && (
-        <div className="flex justify-center items-center gap-3 mt-12">
-          <Button variant="secondary" size="sm" disabled={page === 1}
-            onClick={goPrev}>← Previous</Button>
-          <span className="text-sm text-[#8A8278]">Page {page}</span>
-          <Button variant="secondary" size="sm" disabled={!meta.hasMore}
-            onClick={goNext}>Next →</Button>
+      {meta && (
+        <div className="mt-12">
+          <div className="flex flex-wrap justify-end items-center gap-2 px-3 py-1.5">
+            <Button variant="primary" size="sm" disabled={page === 1} onClick={goPrev}>← Previous</Button>
+            <span className="text-sm text-[#8A8278]">Page {page}</span>
+            <Button variant="primary" size="sm" disabled={!meta.hasMore} onClick={goNext}>Next →</Button>
+          </div>
         </div>
       )}
 
@@ -178,3 +178,13 @@ function TasksPageInner() {
 export default function TasksPage() {
   return <Suspense><TasksPageInner /></Suspense>;
 }
+
+
+
+
+
+
+
+
+
+

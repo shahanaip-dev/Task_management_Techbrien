@@ -16,7 +16,7 @@ const EMPTY_FORM: CreateProjectForm = { name: '', description: '', memberIds: []
 
 export default function ProjectsPage() {
   const { isAdmin } = useAuth();
-  const { projects, meta, loading, error, createProject, updateProject, deleteProject, page, goNext, goPrev, setSearch } = useProjects(12);
+  const { projects, meta, loading, error, createProject, updateProject, deleteProject, page, goNext, goPrev, setSearch } = useProjects(8);
 
   const debounceRef                   = useRef<ReturnType<typeof setTimeout> | null>(null);
   const [inputValue, setInputValue]   = useState('');
@@ -38,7 +38,7 @@ export default function ProjectsPage() {
   // Fetch non-admin users for member assignment
   useEffect(() => {
     if (!isAdmin) return;
-    usersApi.list({ limit: 1000 })
+    usersApi.list({ limit: 6 })
       .then((res) => {
         setUsers(res.data.data.data.filter((u: User) => u.role !== 'ADMIN'));
       })
@@ -159,15 +159,15 @@ export default function ProjectsPage() {
       {error && <div className="bg-red-50 border border-red-200 text-red-700 rounded-lg p-4 mb-6 text-sm">{error}</div>}
 
       {!loading && projects.length > 0 && (
-        <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-8">
+        <div className="flex flex-wrap items-center gap-3 mb-6">
           {[
             { label: 'Projects (page)', value: projects.length },
             { label: 'Tasks (page)',    value: projects.reduce((s: number, p: Project) => s + (p.taskCount ?? 0), 0) },
             { label: 'Active Projects', value: projects.length },
           ].map((stat) => (
-            <div key={stat.label} className="bg-[#F1E7E7] rounded-lg border border-[#C6A0A0] px-5 py-4">
-              <p className="text-xs text-[#5B2F2F] uppercase tracking-wide font-medium">{stat.label}</p>
-              <p className="font-serif text-2xl font-semibold text-[#4B1414] mt-1">{stat.value}</p>
+            <div key={stat.label} className="bg-white border border-[#E8DDD4] rounded-lg px-4 py-2.5 flex items-center gap-2">
+              <span className="text-xs text-[#8A8278]">{stat.label}</span>
+              <span className="font-semibold text-[#1C1A18] text-sm">{stat.value}</span>
             </div>
           ))}
         </div>
@@ -183,16 +183,18 @@ export default function ProjectsPage() {
            {isAdmin && <Button onClick={() => setShowCreate(true)}>Create Project</Button>}
         </div>
       ) : (
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5">
           {projects.map((p) => <ProjectCard key={p.id} project={p} onDelete={handleDelete} onEdit={openEdit} isAdmin={isAdmin} />)}
         </div>
       )}
 
-      {meta && (meta.hasMore || page > 1) && (
-        <div className="flex justify-center items-center gap-3 mt-12">
-          <Button variant="secondary" size="sm" disabled={page === 1} onClick={goPrev}>← Previous</Button>
-          <span className="text-sm text-[#8A8278]">Page {page}</span>
-          <Button variant="secondary" size="sm" disabled={!meta.hasMore} onClick={goNext}>Next →</Button>
+      {meta && (
+        <div className="mt-12">
+          <div className="flex flex-wrap justify-end items-center gap-2 px-3 py-1.5">
+            <Button variant="primary" size="sm" disabled={page === 1} onClick={goPrev}>← Previous</Button>
+            <span className="text-sm text-[#8A8278]">Page {page}</span>
+            <Button variant="primary" size="sm" disabled={!meta.hasMore} onClick={goNext}>Next →</Button>
+          </div>
         </div>
       )}
 
@@ -225,3 +227,14 @@ export default function ProjectsPage() {
     </AppLayout>
   );
 }
+
+
+
+
+
+
+
+
+
+
+

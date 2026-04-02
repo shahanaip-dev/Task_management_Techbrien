@@ -23,7 +23,7 @@ function formatDate(value?: string) {
 
 export default function UsersPage() {
   const { user: currentUser, isAdmin } = useAuth();
-  const { users, meta, loading, error, createUser, updateUser, deleteUser, page, goNext, goPrev } = useUsers(12);
+  const { users, meta, loading, error, createUser, updateUser, deleteUser, page, goNext, goPrev } = useUsers(8);
 
   const [showCreate, setShowCreate] = useState(false);
   const [showEdit,   setShowEdit]   = useState(false);
@@ -148,7 +148,7 @@ export default function UsersPage() {
       {/* Users table */}
       <div className="bg-white rounded-lg border border-[#E8DDD4] overflow-hidden">
         {/* Desktop table header - hidden on mobile */}
-        <div className="hidden md:grid grid-cols-12 gap-3 px-5 py-3 bg-[#FAF7F2] text-[11px] uppercase tracking-wider text-[#8A8278] font-semibold">
+        <div className="hidden md:grid grid-cols-12 gap-2 px-5 py-3 bg-[#FAF7F2] text-[11px] uppercase tracking-wider text-[#8A8278] font-semibold">
           <div className="col-span-3">Name</div>
           <div className="col-span-3">Email</div>
           <div className="col-span-2">Role</div>
@@ -168,7 +168,7 @@ export default function UsersPage() {
           users.map((u) => (
             <div key={u.id} className="border-t border-[#E8DDD4] text-sm">
               {/* Desktop row */}
-              <div className="hidden md:grid grid-cols-12 gap-3 px-5 py-4 items-center">
+              <div className="hidden md:grid grid-cols-12 gap-2 px-5 py-4 items-center">
                 <div className="col-span-3 font-medium text-[#1C1A18]">{u.name}</div>
                 <div className="col-span-3 text-[#6B6860] truncate">{u.email}</div>
                 <div className="col-span-2 text-[#6B6860]">{ROLE_LABELS[u.role] ?? u.role}</div>
@@ -182,8 +182,8 @@ export default function UsersPage() {
               </div>
               {/* Mobile card */}
               <div className="md:hidden px-4 py-4">
-                <div className="flex items-center gap-3 mb-3">
-                  <div className="w-9 h-9 rounded-full bg-[#F5E6DC] flex items-center justify-center text-[#7D1F1F] text-sm font-semibold flex-shrink-0">
+                <div className="flex items-center gap-2 mb-3">
+                  <div className="w-9 h-9 rounded-full flex items-center justify-center text-[#7D1F1F] text-sm font-semibold flex-shrink-0">
                     {u.name.charAt(0).toUpperCase()}
                   </div>
                   <div className="flex-1 min-w-0">
@@ -192,7 +192,7 @@ export default function UsersPage() {
                   </div>
                 </div>
                 <div className="flex items-center justify-between">
-                  <div className="flex items-center gap-3 text-xs text-[#8A8278]">
+                  <div className="flex items-center gap-2 text-xs text-[#8A8278]">
                     <span className="inline-block px-2 py-0.5 bg-[#FAF7F2] rounded text-[10px] font-semibold uppercase tracking-wider">{ROLE_LABELS[u.role] ?? u.role}</span>
                     <span>{formatDate(u.createdAt)}</span>
                   </div>
@@ -208,13 +208,13 @@ export default function UsersPage() {
       </div>
 
       {/* Pagination */}
-      {meta && (meta.hasMore || page > 1) && (
-        <div className="flex justify-center items-center gap-3 mt-12">
-          <Button variant="secondary" size="sm" disabled={page === 1}
-            onClick={goPrev}>← Previous</Button>
-          <span className="text-sm text-[#8A8278]">Page {page}</span>
-          <Button variant="secondary" size="sm" disabled={!meta.hasMore}
-            onClick={goNext}>Next →</Button>
+      {meta && (
+        <div className="mt-12">
+          <div className="flex flex-wrap justify-end items-center gap-2 px-3 py-1.5">
+            <Button variant="primary" size="sm" disabled={page === 1} onClick={goPrev}>← Previous</Button>
+            <span className="text-sm text-[#8A8278]">Page {page}</span>
+            <Button variant="primary" size="sm" disabled={!meta.hasMore} onClick={goNext}>Next →</Button>
+          </div>
         </div>
       )}
 
@@ -300,3 +300,12 @@ export default function UsersPage() {
     </AppLayout>
   );
 }
+
+
+
+
+
+
+
+
+
