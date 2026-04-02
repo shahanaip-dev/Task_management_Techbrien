@@ -4,7 +4,7 @@ import { useState, useEffect, useCallback } from 'react';
 import { projectsApi } from '@/lib/api';
 import type { Project, PaginatedData, CreateProjectForm } from '@/types';
 
-export function useProjects(initialLimit = 10) {
+export function useProjects(initialLimit = 10, enabled = true) {
   const [projects, setProjects] = useState<Project[]>([]);
   const [meta,     setMeta]     = useState<PaginatedData<Project>['meta'] | null>(null);
   const [loading,  setLoading]  = useState(false);
@@ -24,8 +24,9 @@ export function useProjects(initialLimit = 10) {
         cursor,
         ...(search.trim() ? { name: search.trim() } : {}),
       });
-      setProjects(res.data.data.data);
-      setMeta(res.data.data.meta);
+      const payload = res.data.data;
+      setProjects(Array.isArray(payload?.data) ? payload.data : []);
+      setMeta(payload?.meta ?? null);
     } catch (err: any) {
       setError(err?.response?.data?.message ?? 'Failed to load projects');
     } finally {
@@ -33,7 +34,10 @@ export function useProjects(initialLimit = 10) {
     }
   }, [cursor, initialLimit, search]);
 
-  useEffect(() => { fetchProjects(); }, [fetchProjects]);
+  useEffect(() => {
+    if (!enabled) return;
+    fetchProjects();
+  }, [fetchProjects, enabled]);
 
   const handleSearch = useCallback((value: string) => {
     setSearch(value);
@@ -59,20 +63,20 @@ export function useProjects(initialLimit = 10) {
 
   const createProject = useCallback(async (data: CreateProjectForm) => {
     const res = await projectsApi.create(data);
-    await fetchProjects();
+    if (enabled) await fetchProjects();
     return res.data.data;
-  }, [fetchProjects]);
+  }, [fetchProjects, enabled]);
 
   const updateProject = useCallback(async (id: string, data: Partial<CreateProjectForm>) => {
     const res = await projectsApi.update(id, data);
-    await fetchProjects();
+    if (enabled) await fetchProjects();
     return res.data.data;
-  }, [fetchProjects]);
+  }, [fetchProjects, enabled]);
 
   const deleteProject = useCallback(async (id: string) => {
     await projectsApi.delete(id);
-    await fetchProjects();
-  }, [fetchProjects]);
+    if (enabled) await fetchProjects();
+  }, [fetchProjects, enabled]);
 
   return {
     projects, meta, loading, error,

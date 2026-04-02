@@ -11,6 +11,7 @@ import EditTaskModal from '@/components/tasks/EditTaskModal';
 import Button from '@/components/ui/Button';
 import { useTasks } from '@/hooks/useTasks';
 import { useProjects } from '@/hooks/useProjects';
+import { useProject } from '@/hooks/useProject';
 import { usersApi } from '@/lib/api';
 import type { User, Task, TaskFilters as Filters, TaskStatus } from '@/types';
 
@@ -25,7 +26,9 @@ function TasksPageInner() {
 
   const { tasks, meta, loading, error, createTask, updateTaskStatus, updateTask, deleteTask, page, goNext, goPrev } =
     useTasks(filters, 12);
-  const { projects } = useProjects(100);
+  const { project } = useProject(defaultProjectId);
+  const { projects: allProjects } = useProjects(100, !defaultProjectId);
+  const projects = defaultProjectId ? (project ? [project] : []) : allProjects;
 
   useEffect(() => {
     usersApi.list({ limit: 100 }).then((r) => setUsers(r.data.data.data)).catch(() => {});

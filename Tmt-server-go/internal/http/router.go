@@ -14,9 +14,10 @@ import (
 	"github.com/go-chi/chi/v5"
 	chimw "github.com/go-chi/chi/v5/middleware"
 	"github.com/go-chi/cors"
+	"github.com/jackc/pgx/v5/pgxpool"
 )
 
-func NewRouter(cfg config.Config, users *repositories.UserRepository) http.Handler {
+func NewRouter(cfg config.Config, users *repositories.UserRepository, db *pgxpool.Pool) http.Handler {
 	r := chi.NewRouter()
 
 	r.Use(chimw.RequestID)
@@ -43,46 +44,56 @@ func NewRouter(cfg config.Config, users *repositories.UserRepository) http.Handl
 		})
 
 		// Users
+		userSvc := services.NewUserService(users)
+		userHandler := handlers.NewUserHandler(userSvc)
 		api.Route("/users", func(ur chi.Router) {
-			ur.With(middleware.Authenticate(cfg.JWT.Secret)).Patch("/me/password", middleware.Wrap(handlers.ChangePassword))
+			ur.With(middleware.Authenticate(cfg.JWT.Secret)).Patch("/me/password", middleware.Wrap(userHandler.ChangePassword))
 
 			ur.Group(func(admin chi.Router) {
 				admin.Use(middleware.Authenticate(cfg.JWT.Secret))
 				admin.Use(middleware.Authorize(types.RoleAdmin))
 
-				admin.Post("/", middleware.Wrap(handlers.CreateUser))
-				admin.Get("/", middleware.Wrap(handlers.ListUsers))
-				admin.Get("/{id}", middleware.Wrap(handlers.GetUser))
-				admin.Put("/{id}", middleware.Wrap(handlers.UpdateUser))
-				admin.Delete("/{id}", middleware.Wrap(handlers.DeleteUser))
+				admin.Post("/", middleware.Wrap(userHandler.CreateUser))
+				admin.Get("/", middleware.Wrap(userHandler.ListUsers))
+				admin.Get("/{id}", middleware.Wrap(userHandler.GetUser))
+				admin.Put("/{id}", middleware.Wrap(userHandler.UpdateUser))
+				admin.Delete("/{id}", middleware.Wrap(userHandler.DeleteUser))
 			})
 		})
 
 		// Projects
+		projectRepo := repositories.NewProjectRepository(db)
+		projectSvc := services.NewProjectService(projectRepo)
+		projectHandler := handlers.NewProjectHandler(projectSvc)
 		api.Route("/projects", func(pr chi.Router) {
 			pr.Use(middleware.Authenticate(cfg.JWT.Secret))
-			pr.With(middleware.Authorize(types.RoleAdmin)).Post("/", middleware.Wrap(handlers.CreateProject))
-			pr.Get("/", middleware.Wrap(handlers.ListProjects))
-			pr.Get("/{id}", middleware.Wrap(handlers.GetProject))
-			pr.With(middleware.Authorize(types.RoleAdmin)).Put("/{id}", middleware.Wrap(handlers.UpdateProject))
-			pr.With(middleware.Authorize(types.RoleAdmin)).Delete("/{id}", middleware.Wrap(handlers.DeleteProject))
+			pr.With(middleware.Authorize(types.RoleAdmin)).Post("/", middleware.Wrap(projectHandler.CreateProject))
+			pr.Get("/", middleware.Wrap(projectHandler.ListProjects))
+			pr.Get("/{id}", middleware.Wrap(projectHandler.GetProject))
+			pr.With(middleware.Authorize(types.RoleAdmin)).Put("/{id}", middleware.Wrap(projectHandler.UpdateProject))
+			pr.With(middleware.Authorize(types.RoleAdmin)).Delete("/{id}", middleware.Wrap(projectHandler.DeleteProject))
 		})
 
 		// Tasks
+		taskRepo := repositories.NewTaskRepository(db)
+		taskSvc := services.NewTaskService(taskRepo, projectRepo, users)
+		taskHandler := handlers.NewTaskHandler(taskSvc)
 		api.Route("/tasks", func(tr chi.Router) {
 			tr.Use(middleware.Authenticate(cfg.JWT.Secret))
-			tr.Post("/", middleware.Wrap(handlers.CreateTask))
-			tr.Get("/", middleware.Wrap(handlers.ListTasks))
-			tr.Get("/{id}", middleware.Wrap(handlers.GetTask))
-			tr.Put("/{id}", middleware.Wrap(handlers.UpdateTask))
-			tr.Patch("/{id}/assign", middleware.Wrap(handlers.AssignTask))
-			tr.Delete("/{id}", middleware.Wrap(handlers.DeleteTask))
+			tr.Post("/", middleware.Wrap(taskHandler.CreateTask))
+			tr.Get("/", middleware.Wrap(taskHandler.ListTasks))
+			tr.Get("/{id}", middleware.Wrap(taskHandler.GetTask))
+			tr.Put("/{id}", middleware.Wrap(taskHandler.UpdateTask))
+			tr.Patch("/{id}/assign", middleware.Wrap(taskHandler.AssignTask))
+			tr.Delete("/{id}", middleware.Wrap(taskHandler.DeleteTask))
 		})
 
 		// Dashboard
+		dashboardSvc := services.NewDashboardService(db)
+		dashboardHandler := handlers.NewDashboardHandler(dashboardSvc)
 		api.Route("/dashboard", func(dr chi.Router) {
 			dr.Use(middleware.Authenticate(cfg.JWT.Secret))
-			dr.Get("/summary", middleware.Wrap(handlers.DashboardSummary))
+			dr.Get("/summary", middleware.Wrap(dashboardHandler.Summary))
 		})
 
 		// Health

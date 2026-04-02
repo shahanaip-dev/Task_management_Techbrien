@@ -52,7 +52,7 @@ func (s *AuthService) Login(ctx context.Context, email, password string) (LoginR
 		return LoginResult{}, appErrors.AppError{StatusCode: 401, Message: invalid}
 	}
 
-	token, err := signToken(s.jwtSecret, s.expiresIn, user.ID, user.Email, user.Role)
+	token, err := signToken(s.jwtSecret, s.expiresIn, user.ID, user.Email, string(user.Role))
 	if err != nil {
 		return LoginResult{}, err
 	}
@@ -63,7 +63,7 @@ func (s *AuthService) Login(ctx context.Context, email, password string) (LoginR
 			ID:        user.ID,
 			Name:      user.Name,
 			Email:     user.Email,
-			Role:      user.Role,
+			Role:      string(user.Role),
 			CreatedAt: user.CreatedAt,
 		},
 	}, nil

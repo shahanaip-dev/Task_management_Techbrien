@@ -30,7 +30,7 @@ func main() {
 	defer pool.Close()
 
 	userRepo := repositories.NewUserRepository(pool)
-	handler := httpserver.NewRouter(cfg, userRepo)
+	handler := httpserver.NewRouter(cfg, userRepo, pool)
 	srv := &http.Server{
 		Addr:              fmt.Sprintf(":%d", cfg.App.Port),
 		Handler:           handler,
